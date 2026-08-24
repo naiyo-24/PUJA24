@@ -1,0 +1,523 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../core/theme/app_colors.dart';
+
+class ProfileScreen extends ConsumerStatefulWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  String? _profileImagePath;
+  String _name = 'Sayar Paul';
+  String _phone = '+91 98765 43210';
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _profileImagePath = pickedFile.path;
+      });
+    }
+  }
+
+  void _showEditProfileSheet() {
+    final nameController = TextEditingController(text: _name);
+    final phoneController = TextEditingController(text: _phone);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.charcoal : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Edit Profile',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: isDark ? AppColors.pureWhite : AppColors.deepMaroon,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  labelText: 'Full Name',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.person, color: AppColors.antiqueGold),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: 'Phone Number',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.phone, color: AppColors.antiqueGold),
+                ),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _name = nameController.text;
+                      _phone = phoneController.text;
+                    });
+                    context.pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.pujaRed,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Save Changes', style: TextStyle(fontSize: 16)),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Scaffold(
+      backgroundColor: isDark ? AppColors.charcoal : AppColors.ivory,
+      appBar: AppBar(
+        title: const Text('My Profile'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+            _buildProfileHeader(theme),
+            const SizedBox(height: 24),
+            _buildStatsRow(theme, isDark),
+            const SizedBox(height: 32),
+            _buildMenuSection(context, theme, isDark),
+            const SizedBox(height: 40),
+            _buildLogoutButton(context, theme),
+            const SizedBox(height: 16),
+            _buildDeleteAccountButton(context, theme),
+            const SizedBox(height: 16),
+            Text(
+              'Version 1.0.0',
+              style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+            ),
+            const SizedBox(height: 104), // Padding to clear bottom nav bar
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader(ThemeData theme) {
+    return Column(
+      children: [
+        Stack(
+          children: [
+            GestureDetector(
+              onTap: _pickImage,
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(color: AppColors.pujaRed.withOpacity(0.2), blurRadius: 20, offset: const Offset(0, 8)),
+                  ],
+                  border: Border.all(color: Colors.white, width: 4),
+                  image: _profileImagePath != null
+                      ? DecorationImage(
+                          image: FileImage(File(_profileImagePath!)),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                ),
+                child: _profileImagePath == null
+                    ? const Center(
+                        child: Icon(Icons.person, size: 40, color: AppColors.antiqueGold),
+                      )
+                    : null,
+              ),
+            ),
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppColors.pujaRed,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(width: 28), // Balances the edit icon on the right
+            Text(
+              _name,
+              style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: _showEditProfileSheet,
+              child: const Icon(Icons.edit, size: 20, color: AppColors.pujaRed),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          _phone,
+          style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatsRow(ThemeData theme, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.charcoal : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            if (!isDark) BoxShadow(color: AppColors.deepMaroon.withOpacity(0.08), blurRadius: 24, offset: const Offset(0, 8)),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildStatItem(theme, '12', 'Saved'),
+            Container(width: 1, height: 40, color: Colors.grey.withOpacity(0.3)),
+            _buildStatItem(theme, '3', 'Routes'),
+            Container(width: 1, height: 40, color: Colors.grey.withOpacity(0.3)),
+            _buildStatItem(theme, '8', 'Reviews'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(ThemeData theme, String value, String label) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: AppColors.pujaRed),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMenuSection(BuildContext context, ThemeData theme, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
+          _buildMenuItem(context, theme, Icons.route, 'My Puja Plans', isDark, onTap: () {}),
+          _buildMenuItem(context, theme, Icons.favorite_border, 'Saved Pandals', isDark, onTap: () {}),
+          _buildMenuItem(context, theme, Icons.privacy_tip_outlined, 'Privacy Policy', isDark, onTap: () {
+            context.push('/privacy');
+          }),
+          _buildMenuItem(context, theme, Icons.gavel, 'Terms of Service', isDark, onTap: () {
+            context.push('/terms');
+          }),
+          _buildMenuItem(context, theme, Icons.help_outline, 'Help & Support', isDark, onTap: () {
+            _showSupportBottomSheet(context, theme, isDark);
+          }),
+        ],
+      ),
+    );
+  }
+
+  void _showSupportBottomSheet(BuildContext context, ThemeData theme, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.charcoal : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Contact Support',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: isDark ? AppColors.pureWhite : AppColors.deepMaroon,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Need help with PUJA24? Reach out to the Naiyo24 team directly!',
+              style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            _buildSupportRow(Icons.language, 'Website', 'naiyo24.com', isDark, () async {
+              final url = Uri.parse('https://naiyo24.com');
+              try {
+                await launchUrl(url, mode: LaunchMode.externalApplication);
+              } catch (e) {
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open website.')));
+              }
+            }),
+            const SizedBox(height: 16),
+            _buildSupportRow(Icons.phone, 'Phone', '+91 6289171798', isDark, () async {
+              final url = Uri.parse('tel:+916289171798');
+              try {
+                await launchUrl(url);
+              } catch (e) {
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open phone dialer.')));
+              }
+            }),
+            const SizedBox(height: 16),
+            _buildSupportRow(Icons.email, 'Email', 'services.naiyo@gmail.com', isDark, () async {
+              final url = Uri.parse('mailto:services.naiyo@gmail.com');
+              try {
+                await launchUrl(url);
+              } catch (e) {
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open email app.')));
+              }
+            }),
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSupportRow(IconData icon, String label, String value, bool isDark, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.antiqueGold.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: AppColors.antiqueGold, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: isDark ? AppColors.pureWhite : AppColors.deepMaroon,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(BuildContext context, ThemeData theme, IconData icon, String title, bool isDark, {VoidCallback? onTap}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          if (!isDark) BoxShadow(color: AppColors.deepMaroon.withOpacity(0.05), blurRadius: 16, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Material(
+        color: isDark ? AppColors.charcoal : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppColors.antiqueGold.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: AppColors.antiqueGold, size: 22),
+        ),
+        title: Text(title, style: theme.textTheme.titleMedium?.copyWith(fontSize: 15, fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppColors.charcoal)),
+        trailing: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: Colors.grey.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
+        ),
+        onTap: onTap,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton(BuildContext context, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: SizedBox(
+        width: double.infinity,
+        child: TextButton.icon(
+          onPressed: () {
+            context.go('/login');
+          },
+          icon: const Icon(Icons.logout, color: AppColors.errorRed),
+          label: const Text(
+            'Logout',
+            style: TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.bold),
+          ),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            backgroundColor: AppColors.errorRed.withOpacity(0.1),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDeleteAccountButton(BuildContext context, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: SizedBox(
+        width: double.infinity,
+        child: TextButton.icon(
+          onPressed: () {
+            _showDeleteAccountDialog(context);
+          },
+          icon: const Icon(Icons.delete_forever, color: AppColors.errorRed),
+          label: const Text(
+            'Delete Account',
+            style: TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.bold),
+          ),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: AppColors.errorRed.withOpacity(0.3), width: 1),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Account', style: TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.bold)),
+        content: const Text('Are you sure you want to completely delete your account? This action cannot be undone and all your data will be permanently removed.'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: Colors.white,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close dialog
+              context.go('/login'); // Navigate to login as if deleted
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.errorRed,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+}
