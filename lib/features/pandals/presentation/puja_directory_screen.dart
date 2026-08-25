@@ -35,19 +35,17 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 8),
-                  const SizedBox(height: 24),
                   _buildFilterChips(),
                   const SizedBox(height: 24),
                   _buildQuickStats(theme),
                   const SizedBox(height: 32),
                   _buildSectionHeader(theme, '🔥 Popular Pujas', 'View All'),
                   const SizedBox(height: 16),
-                  _buildPopularPujasRow(),
+                  _buildPopularPujasRow(context),
                   const SizedBox(height: 32),
                   _buildSectionHeader(theme, '📍 Explore by Area', 'View All'),
                   const SizedBox(height: 16),
-                  _buildAreaRow(theme),
+                  _buildAreaRow(context, theme),
                   const SizedBox(height: 32),
                   _buildSectionHeader(theme, '🧭 Nearby Pujas', 'Map View'),
                   const SizedBox(height: 16),
@@ -62,146 +60,11 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
   }
 
   Widget _buildHeroHeader(BuildContext context, ThemeData theme) {
-    return SliverAppBar(
-      expandedHeight: 420.0,
-      floating: false,
-      pinned: false,
-      backgroundColor: AppColors.ivory,
-      elevation: 0,
-      automaticallyImplyLeading: false,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Elegant background image (parallaxes)
-            Image.asset(
-              'assets/images/ad1.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
-            ),
-            // Cinematic dark gradient overlay
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.2),
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.5),
-                    Colors.black.withOpacity(0.9),
-                  ],
-                  stops: const [0.0, 0.3, 0.6, 1.0],
-                ),
-              ),
-            ),
-            // Text Content
-            Positioned(
-              left: 24,
-              right: 24,
-              bottom: 90, // Positioned above the bottom curve area
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Durga Puja',
-                    style: AppTypography.heroHeading(color: Colors.white, fontSize: 38),
-                  ),
-                  Text(
-                    'KOLKATA 2026',
-                    style: AppTypography.sectionHeading(color: AppColors.antiqueGold, fontSize: 18).copyWith(letterSpacing: 4),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withOpacity(0.4), width: 1),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.auto_awesome, size: 16, color: Colors.white),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Experience the Magic',
-                          style: AppTypography.chip(color: Colors.white, fontSize: 13),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      // The bottom area does NOT parallax, it scrolls over the image perfectly
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(72),
-        child: Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.bottomCenter,
-          children: [
-            // The Ivory Transition Curve
-            Container(
-              height: 72,
-              decoration: const BoxDecoration(
-                color: AppColors.ivory,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
-              ),
-            ),
-            // The Floating Search Bar nestled completely within the curve
-            Positioned(
-              bottom: 8,
-              left: 24,
-              right: 24,
-              child: Container(
-                height: 56,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.deepMaroon.withOpacity(0.12),
-                      blurRadius: 24,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  style: const TextStyle(fontWeight: FontWeight.w500, color: AppColors.charcoal),
-                  decoration: InputDecoration(
-                    hintText: 'Search puja, pandal, area...',
-                    hintStyle: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.normal),
-                    filled: false,
-                    prefixIcon: const Padding(
-                      padding: EdgeInsets.only(left: 12.0),
-                      child: Icon(Icons.search, color: AppColors.antiqueGold, size: 26),
-                    ),
-                    suffixIcon: Padding(
-                      padding: const EdgeInsets.only(right: 6.0),
-                      child: Container(
-                        margin: const EdgeInsets.all(6),
-                        decoration: const BoxDecoration(
-                          color: AppColors.pujaRed,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.tune, color: Colors.white, size: 18),
-                      ),
-                    ),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+    return SliverPersistentHeader(
+      pinned: false, // Don't pin the header, let it scroll away smoothly
+      delegate: _HeroHeaderDelegate(
+        expandedHeight: 340.0,
+        searchController: _searchController,
       ),
     );
   }
@@ -209,34 +72,37 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
   Widget _buildFilterChips() {
     final filters = ['All', 'Popular', 'Nearby', 'North Kolkata', 'South Kolkata', 'Salt Lake'];
     
-    return SizedBox(
-      height: 40,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        itemCount: filters.length,
-        itemBuilder: (context, index) {
-          final isSelected = index == 0;
-          return Container(
-            margin: const EdgeInsets.only(right: 12),
-            child: FilterChip(
-              label: Text(filters[index], style: AppTypography.chip(
-                color: isSelected ? Colors.white : AppColors.deepMaroon,
-                fontSize: 13,
-              )),
-              selected: isSelected,
-              onSelected: (bool selected) {},
-              backgroundColor: Colors.white,
-              selectedColor: AppColors.pujaRed,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(
-                  color: isSelected ? AppColors.pujaRed : AppColors.antiqueGold.withOpacity(0.3),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: SizedBox(
+        height: 40,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          itemCount: filters.length,
+          itemBuilder: (context, index) {
+            final isSelected = index == 0;
+            return Container(
+              margin: const EdgeInsets.only(right: 12),
+              child: FilterChip(
+                label: Text(filters[index], style: AppTypography.chip(
+                  color: isSelected ? Colors.white : AppColors.deepMaroon,
+                  fontSize: 13,
+                )),
+                selected: isSelected,
+                onSelected: (bool selected) {},
+                backgroundColor: Colors.white,
+                selectedColor: AppColors.pujaRed,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(
+                    color: isSelected ? AppColors.pujaRed : AppColors.antiqueGold.withOpacity(0.3),
+                  ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -298,63 +164,50 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
 
   Widget _buildSectionHeader(ThemeData theme, String title, String actionText) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: AppTypography.sectionHeading(color: AppColors.deepMaroon, fontSize: 20),
-          ),
-          TextButton(
-            onPressed: () {},
-            child: Row(
-              children: [
-                Text(
-                  actionText,
-                  style: AppTypography.chip(color: AppColors.pujaRed, fontSize: 13),
-                ),
-                const SizedBox(width: 4),
-                const Icon(Icons.arrow_forward, size: 16, color: AppColors.pujaRed),
-              ],
-            ),
+          Text(title, style: AppTypography.sectionHeading(color: AppColors.deepMaroon, fontSize: 20)),
+          Row(
+            children: [
+              Text(actionText, style: AppTypography.button(color: AppColors.pujaRed, fontSize: 13)),
+              const SizedBox(width: 4),
+              const Icon(Icons.arrow_forward, color: AppColors.pujaRed, size: 16),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPopularPujasRow() {
+  Widget _buildPopularPujasRow(BuildContext context) {
     return SizedBox(
       height: 330,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
-          _buildPandalCard('Ekdalia Evergreen', 'Ballygunge', '4.8', '1.2 km'),
-          _buildPandalCard('Maddox Square', 'Bhowanipore', '4.7', '2.1 km'),
-          _buildPandalCard('Santosh Mitra', 'Central Kolkata', '4.6', '4.5 km'),
+          _buildPandalCard(context, 'Ekdalia Evergreen', 'Ballygunge', '4.8', '1.2 km'),
+          _buildPandalCard(context, 'Singhi Park', 'Ballygunge', '4.9', '1.5 km'),
+          _buildPandalCard(context, 'Deshapriya Park', 'Kalighat', '4.7', '2.0 km'),
         ],
       ),
     );
   }
 
-  Widget _buildPandalCard(String name, String area, String rating, String distance) {
+  Widget _buildPandalCard(BuildContext context, String name, String area, String rating, String distance) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        context.push('/puja_detail/123'); // Demo ID
+      },
       child: Container(
         width: 200,
         margin: const EdgeInsets.symmetric(horizontal: 8),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.deepMaroon.withOpacity(0.12),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
+          border: Border.all(color: AppColors.antiqueGold.withOpacity(0.2), width: 1),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -458,7 +311,9 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        context.push('/puja_detail/123');
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.pujaRed,
                         elevation: 0,
@@ -478,24 +333,28 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
     );
   }
 
-  Widget _buildAreaRow(ThemeData theme) {
+  Widget _buildAreaRow(BuildContext context, ThemeData theme) {
     return SizedBox(
       height: 120,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         children: [
-          _buildAreaCard('North Kolkata', '78+ Pujas'),
-          _buildAreaCard('South Kolkata', '92+ Pujas'),
-          _buildAreaCard('Central Kolkata', '45+ Pujas'),
+          _buildAreaCard(context, 'Ballygunge', '12 Popular Pujas'),
+          _buildAreaCard(context, 'Salt Lake', '18 Popular Pujas'),
+          _buildAreaCard(context, 'North Kolkata', '25 Traditional Pujas'),
         ],
       ),
     );
   }
 
-  Widget _buildAreaCard(String title, String subtitle) {
+  Widget _buildAreaCard(BuildContext context, String title, String subtitle) {
     return GestureDetector(
-      onTap: () {},
+      onTap: () {
+        // Normally this would go to a list of pujas in the area. 
+        // For demo, we send them to the detail screen so they can see the new feature.
+        context.push('/puja_detail/123'); 
+      },
       child: Container(
         width: 160,
         margin: const EdgeInsets.symmetric(horizontal: 8),
@@ -505,13 +364,7 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
             image: AssetImage('assets/images/ad1.png'),
             fit: BoxFit.cover,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.deepMaroon.withOpacity(0.25),
-              blurRadius: 16,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          border: Border.all(color: AppColors.antiqueGold.withOpacity(0.2), width: 1),
         ),
         child: Container(
           decoration: BoxDecoration(
@@ -647,5 +500,204 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
         ],
       ),
     );
+  }
+}
+
+class _HeroHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final double expandedHeight;
+  final TextEditingController searchController;
+
+  _HeroHeaderDelegate({
+    required this.expandedHeight,
+    required this.searchController,
+  });
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    // Progress goes from 0.0 (fully expanded) to 1.0 (fully collapsed)
+    final progress = (shrinkOffset / maxExtent).clamp(0.0, 1.0);
+    
+    // Smoothly fade out text as we scroll up
+    final textOpacity = (1 - progress * 2.5).clamp(0.0, 1.0);
+    
+    // Parallax the image up slightly
+    final imageOffset = shrinkOffset * 0.4;
+    
+    // The curve smoothly flattens out to a straight line when pinned to the top
+    final curveRadius = 40.0 * (1 - progress).clamp(0.0, 1.0);
+
+    return Container(
+      color: AppColors.ivory,
+      height: maxExtent,
+      child: Stack(
+        fit: StackFit.expand,
+        clipBehavior: Clip.none, // Allow search bar shadow to overflow smoothly
+        children: [
+          // Clipped Background (Image + Gradient)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 40, // Stop before the bottom edge to prevent subpixel bleed
+            child: ClipRect(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Parallax Image
+                  Positioned(
+                    top: -imageOffset,
+                    left: 0,
+                    right: 0,
+                    height: maxExtent + 60, // extra height to prevent bottom clipping during parallax
+                    child: Image.asset(
+                      'assets/images/ad1.png',
+                      fit: BoxFit.cover,
+                      alignment: Alignment.topCenter,
+                    ),
+                  ),
+                  
+                  // Cinematic dark gradient overlay
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.2),
+                            Colors.transparent,
+                            Colors.black.withOpacity((0.5 + progress * 0.5).clamp(0.0, 1.0)),
+                            Colors.black.withOpacity(0.9),
+                          ],
+                          stops: const [0.0, 0.3, 0.6, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Animated Text Content
+          Positioned(
+            left: 24,
+            right: 24,
+            bottom: 145 + (progress * 80), // Translates upward smoothly while fading
+            child: Opacity(
+              opacity: textOpacity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Durga Puja',
+                    style: AppTypography.heroHeading(color: Colors.white, fontSize: 38),
+                  ),
+                  Text(
+                    'KOLKATA 2026',
+                    style: AppTypography.sectionHeading(color: AppColors.antiqueGold, fontSize: 18).copyWith(letterSpacing: 4),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withOpacity(0.4), width: 1),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.auto_awesome, size: 16, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Experience the Magic',
+                          style: AppTypography.chip(color: Colors.white, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Animated Transition Curve (Flattens when pinned)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 88,
+              decoration: BoxDecoration(
+                color: AppColors.ivory,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(curveRadius)),
+              ),
+            ),
+          ),
+          
+          // Sticky Search Bar
+          Positioned(
+            bottom: 12,
+            left: 24,
+            right: 24,
+            child: Container(
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.deepMaroon.withOpacity(0.12 * (1 - progress)), // Shadow softens when pinned
+                    blurRadius: 24,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: searchController,
+                style: const TextStyle(fontWeight: FontWeight.w500, color: AppColors.charcoal),
+                decoration: InputDecoration(
+                  hintText: 'Search puja, pandal, area...',
+                  hintStyle: TextStyle(color: Colors.grey.shade400, fontWeight: FontWeight.normal),
+                  filled: false,
+                  prefixIcon: const Padding(
+                    padding: EdgeInsets.only(left: 12.0),
+                    child: Icon(Icons.search, color: AppColors.antiqueGold, size: 26),
+                  ),
+                  suffixIcon: Padding(
+                    padding: const EdgeInsets.only(right: 6.0),
+                    child: Container(
+                      margin: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: AppColors.pujaRed,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.tune, color: Colors.white, size: 18),
+                    ),
+                  ),
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  double get maxExtent => expandedHeight;
+
+  // Pin the search bar area when collapsed
+  @override
+  double get minExtent => 120.0;
+
+  @override
+  bool shouldRebuild(covariant _HeroHeaderDelegate oldDelegate) {
+    return expandedHeight != oldDelegate.expandedHeight;
   }
 }

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../domain/models/puja_detail_model.dart';
 
 class PujaThemeSection extends StatelessWidget {
-  const PujaThemeSection({super.key});
+  final PujaDetailModel puja;
+
+  const PujaThemeSection({super.key, required this.puja});
 
   @override
   Widget build(BuildContext context) {
@@ -22,16 +25,16 @@ class PujaThemeSection extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          _buildInfoRow(context, 'Theme', 'Heritage of Bengal'),
+          _buildInfoRow(context, 'Theme', puja.theme2026),
           const SizedBox(height: 12),
           Text(
-            'This year, Ekdalia Evergreen explores the rich cultural heritage of Bengal, highlighting the lost art forms and traditional practices from the 18th century...',
+            puja.historySummary,
             style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
           ),
           const SizedBox(height: 16),
-          _buildInfoRow(context, 'Idol Artist', 'Sanatan Rudra Pal'),
+          _buildInfoRow(context, 'Idol Artist', puja.idolArtist),
           const SizedBox(height: 8),
-          _buildInfoRow(context, 'Pandal Designer', 'Theme Makers Inc.'),
+          _buildInfoRow(context, 'Pandal Designer', puja.pandalDesigner),
         ],
       ),
     );

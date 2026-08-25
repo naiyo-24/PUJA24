@@ -115,7 +115,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         body: widget.navigationShell,
         bottomNavigationBar: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.7),
@@ -135,14 +135,15 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
                     child: GNav(
                       rippleColor: Colors.grey[300]!,
                       hoverColor: Colors.grey[100]!,
-                      gap: 8,
+                      gap: 4,
                       activeColor: Colors.white,
-                      iconSize: 24,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      iconSize: 22,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                      textStyle: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
                       duration: const Duration(milliseconds: 400),
                       tabBackgroundColor: AppColors.pujaRed,
                       color: AppColors.mutedGray,
@@ -156,8 +157,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                           text: 'Puja',
                         ),
                         GButton(
-                          icon: Icons.calendar_today_outlined,
-                          text: 'Plan',
+                          icon: Icons.map_outlined,
+                          text: 'Map',
                         ),
                         GButton(
                           icon: Icons.favorite_outline,

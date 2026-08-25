@@ -15,6 +15,58 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String _currentLocationName = 'Kolkata';
+  static bool _hasShownWelcomeModal = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!_hasShownWelcomeModal) {
+      _hasShownWelcomeModal = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showWelcomeModal(context);
+      });
+    }
+  }
+
+  void _showWelcomeModal(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).pop();
+                  context.push('/puja-pass');
+                },
+                child: Image.asset(
+                  'assets/images/pujapass.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+              Positioned(
+                top: 0,
+                right: 0,
+                child: GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    color: Colors.transparent,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   Future<bool> _showExitDialog(BuildContext context) async {
     final theme = Theme.of(context);
@@ -230,14 +282,41 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 24),
 
+              // Banner
+              GestureDetector(
+                onTap: () => context.push('/puja-pass'),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.asset(
+                    'assets/images/banner.png',
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
               // Categories
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _CategoryItem(icon: Icons.temple_hindu, label: 'Pandals', isSelected: true),
-                    _CategoryItem(icon: Icons.restaurant, label: 'Restaurants'),
-                    _CategoryItem(icon: Icons.local_cafe, label: 'Cafés'),
+                    _CategoryItem(
+                      icon: Icons.temple_hindu,
+                      label: 'Pandals',
+                      isSelected: true,
+                      onTap: () => context.go('/puja'),
+                    ),
+                    _CategoryItem(
+                      icon: Icons.restaurant,
+                      label: 'Food & Cafés',
+                      onTap: () => context.push('/cafe'),
+                    ),
+                    _CategoryItem(
+                      icon: Icons.map,
+                      label: 'Plan',
+                      onTap: () => context.push('/plan'),
+                    ),
                     _CategoryItem(icon: Icons.local_parking, label: 'Parking'),
                     _CategoryItem(icon: Icons.wc, label: 'Toilets'),
                     _CategoryItem(icon: Icons.event, label: 'Events'),
@@ -556,11 +635,13 @@ class _CategoryItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool isSelected;
+  final VoidCallback? onTap;
 
   const _CategoryItem({
     required this.icon,
     required this.label,
     this.isSelected = false,
+    this.onTap,
   });
 
   @override
@@ -570,36 +651,39 @@ class _CategoryItem extends StatelessWidget {
     
     return Padding(
       padding: const EdgeInsets.only(right: 16.0),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.charcoal : AppColors.pureWhite,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+      child: GestureDetector(
+        onTap: onTap,
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.charcoal : AppColors.pureWhite,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(
+                icon,
+                color: isSelected ? AppColors.pujaRed : AppColors.textSecondary,
+                size: 28,
+              ),
             ),
-            child: Icon(
-              icon,
-              color: isSelected ? AppColors.pujaRed : AppColors.textSecondary,
-              size: 28,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isDark ? AppColors.pureWhite : AppColors.charcoal,
-            ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: isSelected ? AppColors.pujaRed : AppColors.textSecondary,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            )
+          ],
+        ),
       ),
     );
   }

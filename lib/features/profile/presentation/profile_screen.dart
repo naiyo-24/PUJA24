@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_colors.dart';
-
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -276,11 +276,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           _buildMenuItem(context, theme, Icons.route, 'My Puja Plans', isDark, onTap: () {}),
           _buildMenuItem(context, theme, Icons.favorite_border, 'Saved Pandals', isDark, onTap: () {}),
+          _buildMenuItem(context, theme, Icons.confirmation_number_outlined, 'My Passes', isDark, onTap: () {
+            context.push('/my-passes');
+          }),
           _buildMenuItem(context, theme, Icons.privacy_tip_outlined, 'Privacy Policy', isDark, onTap: () {
             context.push('/privacy');
           }),
           _buildMenuItem(context, theme, Icons.gavel, 'Terms of Service', isDark, onTap: () {
             context.push('/terms');
+          }),
+          _buildMenuItem(context, theme, Icons.info_outline, 'About Us', isDark, onTap: () {
+            context.push('/about-us');
           }),
           _buildMenuItem(context, theme, Icons.help_outline, 'Help & Support', isDark, onTap: () {
             _showSupportBottomSheet(context, theme, isDark);
@@ -294,110 +300,172 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     showModalBottomSheet(
       context: context,
       useRootNavigator: true,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.charcoal : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          color: isDark ? const Color(0xFF141414) : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.pujaRed.withOpacity(0.1),
+              blurRadius: 40,
+              offset: const Offset(0, -10),
+            ),
+          ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Center(
               child: Container(
-                width: 40,
-                height: 4,
+                width: 48,
+                height: 6,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(2),
+                  color: isDark ? Colors.white24 : Colors.black12,
+                  borderRadius: BorderRadius.circular(3),
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.pujaRed.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.support_agent, color: AppColors.pujaRed, size: 28),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Contact Support',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: isDark ? AppColors.pureWhite : AppColors.deepMaroon,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'We\'re here to help you 24/7',
+                        style: TextStyle(color: isDark ? AppColors.antiqueGold : AppColors.pujaRed, fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ).animate().fade(duration: 400.ms).slideY(begin: 0.2),
+            const SizedBox(height: 32),
             Text(
-              'Contact Support',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                color: isDark ? AppColors.pureWhite : AppColors.deepMaroon,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Need help with PUJA24? Reach out to the Naiyo24 team directly!',
-              style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            _buildSupportRow(Icons.language, 'Website', 'naiyo24.com', isDark, () async {
+              'Need help with PUJA24? Reach out to the Naiyo24 team directly through any of the channels below.',
+              style: theme.textTheme.bodyMedium?.copyWith(color: isDark ? Colors.white70 : Colors.black87, height: 1.5),
+            ).animate().fade(delay: 200.ms).slideY(begin: 0.1),
+            const SizedBox(height: 32),
+            _buildSupportRow(Icons.language, 'Visit Our Website', 'naiyo24.com', isDark, () async {
               final url = Uri.parse('https://naiyo24.com');
               try {
                 await launchUrl(url, mode: LaunchMode.externalApplication);
               } catch (e) {
                 if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open website.')));
               }
-            }),
-            const SizedBox(height: 16),
-            _buildSupportRow(Icons.phone, 'Phone', '+91 6289171798', isDark, () async {
+            }).animate().fade(delay: 300.ms).slideX(begin: 0.1),
+            const SizedBox(height: 12),
+            _buildSupportRow(Icons.phone_outlined, 'Call Support', '+91 6289171798', isDark, () async {
               final url = Uri.parse('tel:+916289171798');
               try {
                 await launchUrl(url);
               } catch (e) {
                 if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open phone dialer.')));
               }
-            }),
-            const SizedBox(height: 16),
-            _buildSupportRow(Icons.email, 'Email', 'services.naiyo@gmail.com', isDark, () async {
+            }).animate().fade(delay: 400.ms).slideX(begin: 0.1),
+            const SizedBox(height: 12),
+            _buildSupportRow(Icons.email_outlined, 'Email Us', 'services.naiyo@gmail.com', isDark, () async {
               final url = Uri.parse('mailto:services.naiyo@gmail.com');
               try {
                 await launchUrl(url);
               } catch (e) {
                 if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open email app.')));
               }
-            }),
-            const SizedBox(height: 32),
+            }).animate().fade(delay: 500.ms).slideX(begin: 0.1),
+            const SizedBox(height: 40),
           ],
+        ),
         ),
       ),
     );
   }
 
   Widget _buildSupportRow(IconData icon, String label, String value, bool isDark, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.antiqueGold.withOpacity(0.2),
-                shape: BoxShape.circle,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.antiqueGold.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: AppColors.antiqueGold, size: 22),
               ),
-              child: Icon(icon, color: AppColors.antiqueGold, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: isDark ? Colors.white54 : Colors.black54,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      value,
+                      style: TextStyle(
+                        color: isDark ? AppColors.pureWhite : AppColors.deepMaroon,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: TextStyle(
-                    color: isDark ? AppColors.pureWhite : AppColors.deepMaroon,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                  shape: BoxShape.circle,
                 ),
-              ],
-            ),
-          ],
+                child: Icon(
+                  Icons.arrow_forward_ios,
+                  color: isDark ? Colors.white54 : Colors.black54,
+                  size: 14,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

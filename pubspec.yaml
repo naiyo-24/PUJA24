@@ -47,6 +47,9 @@ dependencies:
   google_nav_bar: ^5.0.7
   flutter_animate: ^4.5.2
   url_launcher: ^6.3.2
+  razorpay_flutter: ^1.4.5
+  flutter_dotenv: ^6.0.1
+  qr_flutter: ^4.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -58,6 +61,18 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.1
+
+flutter_native_splash:
+  color: "#ffffff"
+  image: "assets/icons/icon.png"
+  color_dark: "#141414"
+  image_dark: "assets/icons/icon.png"
+  android_12:
+    color: "#ffffff"
+    image: "assets/icons/icon.png"
+    color_dark: "#141414"
+    image_dark: "assets/icons/icon.png"
 
 flutter_launcher_icons:
   android: "launcher_icon"
@@ -77,6 +92,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
+    - .env
     - assets/
     - assets/images/
     - assets/icons/social/

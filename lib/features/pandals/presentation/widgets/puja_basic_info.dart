@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../domain/models/puja_detail_model.dart';
 
 class PujaBasicInfo extends StatelessWidget {
-  const PujaBasicInfo({super.key});
+  final PujaDetailModel puja;
+
+  const PujaBasicInfo({super.key, required this.puja});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +21,7 @@ class PujaBasicInfo extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Ekdalia Evergreen Club',
+                  puja.name,
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -35,7 +38,7 @@ class PujaBasicInfo extends StatelessWidget {
                     const Icon(Icons.star, size: 16, color: AppColors.saffron),
                     const SizedBox(width: 4),
                     Text(
-                      '4.8',
+                      puja.rating,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.saffron,
@@ -52,7 +55,7 @@ class PujaBasicInfo extends StatelessWidget {
               const Icon(Icons.location_on, size: 16, color: Colors.grey),
               const SizedBox(width: 4),
               Text(
-                'Ballygunge, Kolkata • 1.2 km away',
+                '${puja.area}, Kolkata • ${puja.distance}',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: Colors.grey,
                 ),

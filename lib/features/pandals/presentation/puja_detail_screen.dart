@@ -3,6 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import 'widgets/puja_basic_info.dart';
 import 'widgets/puja_theme_section.dart';
+import 'widgets/puja_live_status.dart';
+import 'widgets/puja_facilities.dart';
+import 'widgets/puja_transit.dart';
+import 'widgets/puja_nearby_places.dart';
+import 'providers/puja_detail_provider.dart';
+import '../domain/models/puja_detail_model.dart';
 
 class PujaDetailScreen extends ConsumerStatefulWidget {
   final String id;
@@ -17,28 +23,43 @@ class _PujaDetailScreenState extends ConsumerState<PujaDetailScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final pujaAsyncValue = ref.watch(pujaDetailProvider(widget.id));
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.charcoal : AppColors.ivory,
-      body: CustomScrollView(
-        slivers: [
-          _buildHeroGallery(context),
-          SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const PujaBasicInfo(),
-                _buildDivider(),
-                const PujaThemeSection(),
-                _buildDivider(),
-                // More sections will go here
-                const SizedBox(height: 100), // padding for bottom bar
-              ],
+      body: pujaAsyncValue.when(
+        data: (puja) => CustomScrollView(
+          slivers: [
+            _buildHeroGallery(context, puja),
+            SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  PujaBasicInfo(puja: puja),
+                  _buildDivider(),
+                  PujaLiveStatus(puja: puja),
+                  _buildDivider(),
+                  PujaThemeSection(puja: puja),
+                  _buildDivider(),
+                  PujaFacilities(puja: puja),
+                  _buildDivider(),
+                  PujaNearbyPlaces(puja: puja),
+                  _buildDivider(),
+                  PujaTransit(puja: puja),
+                  _buildDivider(),
+                  // More sections will go here
+                  const SizedBox(height: 100), // padding for bottom bar
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.pujaRed)),
+        error: (error, stack) => Center(
+          child: Text('Error loading details: $error', style: const TextStyle(color: AppColors.pujaRed)),
+        ),
       ),
-      bottomNavigationBar: _buildBottomActionBar(),
+      bottomNavigationBar: pujaAsyncValue.hasValue ? _buildBottomActionBar() : null,
     );
   }
 
@@ -49,7 +70,7 @@ class _PujaDetailScreenState extends ConsumerState<PujaDetailScreen> {
     );
   }
 
-  Widget _buildHeroGallery(BuildContext context) {
+  Widget _buildHeroGallery(BuildContext context, PujaDetailModel puja) {
     return SliverAppBar(
       expandedHeight: 300.0,
       floating: false,
@@ -74,7 +95,7 @@ class _PujaDetailScreenState extends ConsumerState<PujaDetailScreen> {
           fit: StackFit.expand,
           children: [
             Image.asset(
-              'assets/images/ad1.png', // Temporary placeholder
+              puja.imageUrl,
               fit: BoxFit.cover,
             ),
             Container(
@@ -99,13 +120,13 @@ class _PujaDetailScreenState extends ConsumerState<PujaDetailScreen> {
                   color: Colors.black.withOpacity(0.7),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.photo_library, color: Colors.white, size: 16),
-                    SizedBox(width: 4),
+                    const Icon(Icons.photo_library, color: Colors.white, size: 16),
+                    const SizedBox(width: 4),
                     Text(
-                      '1/42 Photos',
-                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      '1/${puja.totalPhotos} Photos',
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
