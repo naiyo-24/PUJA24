@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:durga_puja_explorer/core/theme/app_colors.dart';
@@ -13,7 +12,7 @@ class MapPickerScreen extends StatefulWidget {
 }
 
 class _MapPickerScreenState extends State<MapPickerScreen> {
-  final MapController _mapController = MapController();
+  GoogleMapController? _mapController;
   
   // Default to Kolkata
   LatLng _currentCenter = const LatLng(22.5726, 88.3639);
@@ -80,10 +79,9 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         _isLoadingLocation = false;
       });
       
-      // Move map once it's loaded and we have location
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _mapController.move(latLng, 16.0);
-      });
+      if (_mapController != null) {
+        _mapController!.animateCamera(CameraUpdate.newLatLngZoom(latLng, 16.0));
+      }
       
     } catch (e) {
       setState(() {
@@ -109,25 +107,23 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       ),
       body: Stack(
         children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: _currentCenter,
-              initialZoom: 16.0,
-              onPositionChanged: (position, hasGesture) {
-                if (position.center != null) {
-                  setState(() {
-                    _currentCenter = position.center!;
-                  });
-                }
-              },
+          GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: _currentCenter,
+              zoom: 16.0,
             ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.sayarpaul.durga_puja_explorer',
-              ),
-            ],
+            onMapCreated: (controller) {
+              _mapController = controller;
+            },
+            onCameraMove: (position) {
+              setState(() {
+                _currentCenter = position.target;
+              });
+            },
+            myLocationEnabled: true,
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: false,
+            mapToolbarEnabled: false,
           ),
           
           // Center Marker Pin
@@ -142,7 +138,6 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             ),
           ),
           
-          // Loading Overlay (Removed so map is always visible)
           if (_isLoadingLocation)
             Positioned(
               top: 16,
@@ -170,7 +165,6 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               ),
             ),
             
-          // Error Message Overlay (Temporary)
           if (!_isLoadingLocation && _locationError != null)
             Positioned(
               top: 16,
@@ -208,7 +202,6 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               ),
             ),
 
-          // Confirm Button
           Positioned(
             bottom: 32,
             left: 24,
@@ -229,7 +222,6 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                   onPressed: _isLoadingLocation
                       ? null
                       : () {
-                          // Return the center latlng back to previous screen
                           context.pop(_currentCenter);
                         },
                   style: ElevatedButton.styleFrom(
@@ -247,7 +239,6 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
             ),
           ),
           
-          // Re-center button
           Positioned(
             bottom: 110,
             right: 24,

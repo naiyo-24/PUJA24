@@ -5,7 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:dio/dio.dart';
 import 'package:durga_puja_explorer/core/theme/app_colors.dart';
 
 class ProfileCreationScreen extends StatefulWidget {
@@ -205,17 +206,31 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> with Sing
         setState(() {
           _isFetchingLocation = true; // Show loading while geocoding
         });
+        final apiKey = 'AIzaSyBmc97dQWHVQCx6obwgI3Quw2_BCJTeAIg';
+        final url = 'https://maps.googleapis.com/maps/api/geocode/json?latlng=${selectedLocation.latitude},${selectedLocation.longitude}&key=$apiKey';
         
-        List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(selectedLocation.latitude, selectedLocation.longitude);
-        if (placemarks.isNotEmpty) {
-          Placemark place = placemarks[0];
-          String address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}';
-          // Clean up leading commas if any fields were empty
-          address = address.replaceAll(RegExp(r'^,\s*'), '').replaceAll(RegExp(r',\s*,'), ',');
-          
-          setState(() {
-            _addressController.text = address;
-          });
+        try {
+          final response = await Dio().get(url);
+          if (response.statusCode == 200 && response.data['status'] == 'OK' && response.data['results'].isNotEmpty) {
+            String address = response.data['results'][0]['formatted_address'];
+            setState(() {
+              _addressController.text = address;
+            });
+          } else {
+            throw Exception('Google API Failed: ${response.data['status']}');
+          }
+        } catch (e) {
+          // Fallback to native geocoding if Google API fails
+          List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(selectedLocation.latitude, selectedLocation.longitude);
+          if (placemarks.isNotEmpty) {
+            Placemark place = placemarks[0];
+            String address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}';
+            address = address.replaceAll(RegExp(r'^,\s*'), '').replaceAll(RegExp(r',\s*,'), ',');
+            
+            setState(() {
+              _addressController.text = address;
+            });
+          }
         }
       }
     } catch (e) {

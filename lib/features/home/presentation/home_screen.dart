@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geocoding/geocoding.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -317,6 +316,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       label: 'Plan',
                       onTap: () => context.push('/plan'),
                     ),
+                    _CategoryItem(
+                      icon: Icons.train,
+                      label: 'Metro',
+                      onTap: () => context.push('/metro'),
+                    ),
                     _CategoryItem(icon: Icons.local_parking, label: 'Parking'),
                     _CategoryItem(icon: Icons.wc, label: 'Toilets'),
                     _CategoryItem(icon: Icons.event, label: 'Events'),
@@ -461,43 +465,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: double.infinity,
                   child: Stack(
                     children: [
-                      FlutterMap(
-                        options: MapOptions(
-                          initialCenter: const LatLng(22.5726, 88.3639), // Default to Kolkata
-                          initialZoom: 13.0,
-                          interactionOptions: const InteractionOptions(
-                            flags: InteractiveFlag.none, // Prevent map from capturing scroll gestures
-                          ),
-                        ),
-                        children: [
-                          TileLayer(
-                            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            userAgentPackageName: 'com.sayarpaul.durga_puja_explorer',
-                          ),
-                          // Dummy Markers for nearby pandals
-                          MarkerLayer(
-                            markers: [
-                              Marker(
-                                point: const LatLng(22.5726, 88.3639),
-                                width: 40,
-                                height: 40,
-                                child: const Icon(Icons.temple_hindu, color: AppColors.pujaRed, size: 30),
-                              ),
-                              Marker(
-                                point: const LatLng(22.56, 88.35),
-                                width: 30,
-                                height: 30,
-                                child: const Icon(Icons.temple_hindu, color: AppColors.deepMaroon, size: 24),
-                              ),
-                              Marker(
-                                point: const LatLng(22.58, 88.37),
-                                width: 30,
-                                height: 30,
-                                child: const Icon(Icons.temple_hindu, color: AppColors.deepMaroon, size: 24),
-                              ),
+                      Container(
+                        color: Colors.grey.withOpacity(0.2),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.map_outlined, size: 64, color: AppColors.textSecondary.withOpacity(0.5)),
+                              const SizedBox(height: 8),
                             ],
                           ),
-                        ],
+                        ),
                       ),
                       // Gradient overlay for better button visibility
                       Container(

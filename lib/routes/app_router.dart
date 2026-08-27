@@ -25,6 +25,8 @@ import '../features/food/presentation/restaurant_detail_screen.dart';
 import '../features/food/domain/models/restaurant_model.dart';
 import '../features/planner/presentation/planner_screen.dart';
 import '../features/saved/presentation/saved_screen.dart';
+import '../features/transport/presentation/metro_guide_screen.dart';
+import '../features/transport/presentation/metro_live_map_screen.dart';
 import '../shell/app_shell.dart';
 import '../core/theme/app_colors.dart';
 
@@ -124,6 +126,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/plan',
         builder: (context, state) => const PlannerScreen(),
+      ),
+      GoRoute(
+        path: '/metro',
+        builder: (context, state) => const MetroGuideScreen(),
+      ),
+      GoRoute(
+        path: '/metro-map',
+        builder: (context, state) => const MetroLiveMapScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
