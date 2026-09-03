@@ -1,25 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'providers/auth_provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../routes/route_names.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        context.go('/login');
-      }
-    });
+    _navigate();
+  }
+
+  Future<void> _navigate() async {
+    await Future.delayed(const Duration(seconds: 3));
+    if (!mounted) return;
+    
+    final authState = ref.read(authProvider);
+    if (authState is Authenticated) {
+      context.go('/explore');
+    } else {
+      context.go('/login');
+    }
   }
 
   @override

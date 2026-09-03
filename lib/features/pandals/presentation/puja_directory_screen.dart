@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
+import 'providers/puja_list_provider.dart';
+import '../domain/models/puja_detail_model.dart';
+import 'widgets/pandal_card_skeleton.dart';
 
 class PujaDirectoryScreen extends ConsumerStatefulWidget {
   const PujaDirectoryScreen({super.key});
@@ -13,10 +16,13 @@ class PujaDirectoryScreen extends ConsumerStatefulWidget {
 
 class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  String _selectedFilter = 'All';
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -29,6 +35,7 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
     return Scaffold(
       backgroundColor: bgColor,
       body: CustomScrollView(
+        controller: _scrollController,
         slivers: [
           _buildHeroHeader(context, theme),
           SliverToBoxAdapter(
@@ -39,7 +46,7 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
                   const SizedBox(height: 24),
                   _buildQuickStats(theme),
                   const SizedBox(height: 32),
-                  _buildSectionHeader(theme, '🔥 Popular Pujas', 'View All'),
+                  _buildSectionHeader(theme, _selectedFilter == 'All' ? '🔥 Popular Pujas' : '🔥 ${_selectedFilter} Pujas', 'View All'),
                   const SizedBox(height: 16),
                   _buildPopularPujasRow(context),
                   const SizedBox(height: 32),
@@ -81,16 +88,21 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 24),
           itemCount: filters.length,
           itemBuilder: (context, index) {
-            final isSelected = index == 0;
+            final filter = filters[index];
+            final isSelected = _selectedFilter == filter;
             return Container(
               margin: const EdgeInsets.only(right: 12),
               child: FilterChip(
-                label: Text(filters[index], style: AppTypography.chip(
+                label: Text(filter, style: AppTypography.chip(
                   color: isSelected ? Colors.white : AppColors.deepMaroon,
                   fontSize: 13,
                 )),
                 selected: isSelected,
-                onSelected: (bool selected) {},
+                onSelected: (bool selected) {
+                  setState(() {
+                    _selectedFilter = filter;
+                  });
+                },
                 backgroundColor: Colors.white,
                 selectedColor: AppColors.pujaRed,
                 shape: RoundedRectangleBorder(
@@ -108,9 +120,12 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
   }
 
   Widget _buildQuickStats(ThemeData theme) {
+    final allPujasCount = ref.watch(filteredPujasProvider('All')).valueOrNull?.length ?? 0;
+    final popularPujasCount = ref.watch(filteredPujasProvider('Popular')).valueOrNull?.length ?? 0;
+
     final stats = [
-      {'icon': Icons.account_balance, 'value': '243+', 'label': 'Pandals', 'color': AppColors.deepMaroon},
-      {'icon': Icons.star, 'value': '50+', 'label': 'Popular', 'color': AppColors.saffron},
+      {'icon': Icons.account_balance, 'value': allPujasCount > 0 ? '${allPujasCount}+' : '...', 'label': 'Pandals', 'color': AppColors.deepMaroon},
+      {'icon': Icons.star, 'value': popularPujasCount > 0 ? '${popularPujasCount}+' : '...', 'label': 'Popular', 'color': AppColors.saffron},
       {'icon': Icons.people, 'value': 'Live', 'label': 'Crowd', 'color': AppColors.pujaRed},
     ];
     return Padding(
@@ -184,22 +199,36 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
   Widget _buildPopularPujasRow(BuildContext context) {
     return SizedBox(
       height: 330,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        children: [
-          _buildPandalCard(context, 'Ekdalia Evergreen', 'Ballygunge', '4.8', '1.2 km'),
-          _buildPandalCard(context, 'Singhi Park', 'Ballygunge', '4.9', '1.5 km'),
-          _buildPandalCard(context, 'Deshapriya Park', 'Kalighat', '4.7', '2.0 km'),
-        ],
+      child: ref.watch(filteredPujasProvider(_selectedFilter)).when(
+        data: (pandals) {
+          if (pandals.isEmpty) {
+            return const Center(child: Text('No pandals found.'));
+          }
+          return ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: pandals.length,
+            itemBuilder: (context, index) {
+              final p = pandals[index];
+              return _buildPandalCard(context, p.id, p.name, p.area, p.rating, p.distance);
+            },
+          );
+        },
+        loading: () => ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: 3,
+          itemBuilder: (context, index) => const PandalCardSkeleton(),
+        ),
+        error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
       ),
     );
   }
 
-  Widget _buildPandalCard(BuildContext context, String name, String area, String rating, String distance) {
+  Widget _buildPandalCard(BuildContext context, String id, String name, String area, String rating, String distance) {
     return GestureDetector(
       onTap: () {
-        context.push('/puja_detail/123'); // Demo ID
+        context.push('/puja_detail/$id');
       },
       child: Container(
         width: 200,
@@ -312,7 +341,7 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
-                        context.push('/puja_detail/123');
+                        context.push('/puja_detail/$id');
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.pujaRed,
@@ -351,9 +380,14 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
   Widget _buildAreaCard(BuildContext context, String title, String subtitle) {
     return GestureDetector(
       onTap: () {
-        // Normally this would go to a list of pujas in the area. 
-        // For demo, we send them to the detail screen so they can see the new feature.
-        context.push('/puja_detail/123'); 
+        setState(() {
+          _selectedFilter = title;
+        });
+        _scrollController.animateTo(
+          0.0,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
       },
       child: Container(
         width: 160,
@@ -411,93 +445,141 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
   Widget _buildNearbyList(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        children: [
-          _buildNearbyListTile('Deshapriya Park', 'Bhowanipore', '850 m', '4.5'),
-          const SizedBox(height: 16),
-          _buildNearbyListTile('Chetla Agrani', 'Chetla', '1.1 km', '4.4'),
-          const SizedBox(height: 16),
-          _buildNearbyListTile('Kumartuli Park', 'Kumartuli', '1.3 km', '4.4'),
-        ],
+      child: ref.watch(nearbyPandalsProvider).when(
+        data: (pandals) {
+          if (pandals.isEmpty) {
+            return const Padding(
+              padding: EdgeInsets.all(24.0),
+              child: Text('No nearby pandals found.', style: TextStyle(color: Colors.grey)),
+            );
+          }
+          return Column(
+            children: pandals.map((p) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _buildNearbyListTile(p),
+              );
+            }).toList(),
+          );
+        },
+        loading: () => ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+          itemCount: 5,
+          itemBuilder: (context, index) => const Padding(
+            padding: EdgeInsets.only(bottom: 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: PandalCardSkeleton(),
+            ),
+          ),
+        ),
+        error: (error, stackTrace) => Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Text(
+            error.toString().contains('permission') 
+              ? 'Location permission is required to view nearby pandals.'
+              : 'Error fetching location: \$error',
+            style: const TextStyle(color: Colors.red),
+            textAlign: TextAlign.center,
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildNearbyListTile(String name, String area, String distance, String rating) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.antiqueGold.withOpacity(0.3)),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Thumbnail
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.asset(
-              'assets/images/ad2.png',
-              width: 80,
-              height: 80,
-              fit: BoxFit.cover,
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        name,
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.deepMaroon, fontSize: 15),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+  Widget _buildNearbyListTile(PujaDetailModel p) {
+    return GestureDetector(
+      onTap: () {
+        context.push('/puja_detail/${p.id}');
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.antiqueGold.withOpacity(0.3)),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Thumbnail
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: p.imageUrl.startsWith('http') 
+                ? Image.network(
+                    p.imageUrl,
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      width: 80, height: 80, color: Colors.grey.shade200,
+                      child: const Icon(Icons.image, color: Colors.grey),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.pujaRed.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        distance,
-                        style: const TextStyle(color: AppColors.pujaRed, fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  area,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(Icons.star, size: 14, color: AppColors.saffron),
-                    const SizedBox(width: 4),
-                    Text(rating, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                    const Spacer(),
-                    // Actions
-                    const Icon(Icons.directions, size: 18, color: AppColors.pujaRed),
-                    const SizedBox(width: 12),
-                    const Icon(Icons.bookmark_border, size: 18, color: AppColors.antiqueGold),
-                  ],
-                ),
-              ],
+                  )
+                : Container(
+                    width: 80,
+                    height: 80,
+                    color: const Color(0xFF2A2A2A),
+                    child: const Center(child: Icon(Icons.image, color: Colors.white54, size: 40)),
+                  ),
             ),
-          ),
-        ],
+            const SizedBox(width: 16),
+            // Details
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          p.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.deepMaroon, fontSize: 15),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.pujaRed.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          p.distance,
+                          style: const TextStyle(color: AppColors.pujaRed, fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    p.area,
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.star, size: 14, color: AppColors.saffron),
+                      const SizedBox(width: 4),
+                      Text(p.rating, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      const Spacer(),
+                      // Actions
+                      const Icon(Icons.directions, size: 18, color: AppColors.pujaRed),
+                      const SizedBox(width: 12),
+                      const Icon(Icons.bookmark_border, size: 18, color: AppColors.antiqueGold),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

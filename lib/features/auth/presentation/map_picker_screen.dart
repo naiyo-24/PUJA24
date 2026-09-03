@@ -57,7 +57,6 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           timeLimit: const Duration(seconds: 5),
         );
       } catch (e) {
-        // Fallback if getCurrentPosition times out
         position ??= Position(
           longitude: 88.3639,
           latitude: 22.5726,
@@ -79,9 +78,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         _isLoadingLocation = false;
       });
       
-      if (_mapController != null) {
-        _mapController!.animateCamera(CameraUpdate.newLatLngZoom(latLng, 16.0));
-      }
+      _mapController?.animateCamera(CameraUpdate.newLatLngZoom(latLng, 16.0));
       
     } catch (e) {
       setState(() {
@@ -108,22 +105,13 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       body: Stack(
         children: [
           GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: _currentCenter,
-              zoom: 16.0,
-            ),
-            onMapCreated: (controller) {
-              _mapController = controller;
-            },
+            initialCameraPosition: CameraPosition(target: _currentCenter, zoom: 16.0),
+            onMapCreated: (controller) => _mapController = controller,
             onCameraMove: (position) {
               setState(() {
                 _currentCenter = position.target;
               });
             },
-            myLocationEnabled: true,
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: false,
-            mapToolbarEnabled: false,
           ),
           
           // Center Marker Pin

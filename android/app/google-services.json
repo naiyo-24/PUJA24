@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "16874042850",
+    "project_id": "puja24-ea003",
+    "storage_bucket": "puja24-ea003.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:16874042850:android:6f13eea7859f79b21535bb",
+        "android_client_info": {
+          "package_name": "com.naiyo24.puja24"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAbIs_YOO3qUIeqNj08BRMpUHi0EdaV9kw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

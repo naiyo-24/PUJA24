@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../auth/presentation/providers/auth_provider.dart';
+import 'providers/pass_provider.dart';
+import '../data/pass_repository.dart';
 
-class PassPurchaseFormScreen extends StatefulWidget {
-  const PassPurchaseFormScreen({super.key});
+class PassPurchaseFormScreen extends ConsumerStatefulWidget {
+  final String packageId;
+  const PassPurchaseFormScreen({super.key, required this.packageId});
 
   @override
-  State<PassPurchaseFormScreen> createState() => _PassPurchaseFormScreenState();
+  ConsumerState<PassPurchaseFormScreen> createState() => _PassPurchaseFormScreenState();
 }
 
-class _PassPurchaseFormScreenState extends State<PassPurchaseFormScreen> {
+class _PassPurchaseFormScreenState extends ConsumerState<PassPurchaseFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -34,7 +38,7 @@ class _PassPurchaseFormScreenState extends State<PassPurchaseFormScreen> {
     _nameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
-    _razorpay.clear(); // Removes all listeners
+    _razorpay.clear();
     super.dispose();
   }
 
@@ -73,7 +77,6 @@ class _PassPurchaseFormScreenState extends State<PassPurchaseFormScreen> {
             onPressed: () {
               Navigator.of(ctx).pop();
               if (isSuccess) {
-                // Navigate back to home or profile
                 context.go('/explore');
               }
             },
@@ -84,33 +87,39 @@ class _PassPurchaseFormScreenState extends State<PassPurchaseFormScreen> {
     );
   }
 
-  void _initiatePayment() {
+  Future<void> _initiatePayment() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isProcessing = true);
       
-      final apiKey = dotenv.env['RAZORPAY_KEY_ID'] ?? '';
-      if (apiKey.isEmpty) {
+      final authState = ref.read(authProvider);
+      final token = (authState is Authenticated) ? authState.token : null;
+
+      if (token == null) {
         setState(() => _isProcessing = false);
-        _showResultDialog('Error', 'Razorpay API Key not found.', false);
+        _showResultDialog('Error', 'You must be logged in to purchase a pass.', false);
         return;
       }
 
-      var options = {
-        'key': apiKey,
-        'amount': 50000, // Amount is in paise (₹500.00 = 50000 paise)
-        'name': 'PUJA24 VIP Pass',
-        'description': 'Exclusive 3-Person Entry without lines',
-        'prefill': {
-          'contact': _phoneController.text.trim(),
-          'email': _emailController.text.trim()
-        }
-      };
-
       try {
+        final passRepo = ref.read(passRepositoryProvider);
+        final orderDetails = await passRepo.createOrder(widget.packageId, token);
+
+        var options = {
+          'key': orderDetails['key_id'],
+          'amount': orderDetails['amount'],
+          'order_id': orderDetails['gateway_order_id'],
+          'name': 'PUJA24 VIP Pass',
+          'description': 'Exclusive VIP Access',
+          'prefill': {
+            'contact': _phoneController.text.trim(),
+            'email': _emailController.text.trim()
+          }
+        };
+
         _razorpay.open(options);
       } catch (e) {
         setState(() => _isProcessing = false);
-        _showResultDialog('Error', e.toString(), false);
+        _showResultDialog('Error', 'Failed to create order on server: $e', false);
       }
     }
   }

@@ -6,6 +6,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../auth/presentation/providers/auth_provider.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geocoding/geocoding.dart';
+import 'widgets/map_location_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -15,8 +21,24 @@ class ProfileScreen extends ConsumerStatefulWidget {
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String? _profileImagePath;
-  String _name = 'Sayar Paul';
-  String _phone = '+91 98765 43210';
+  String _name = 'User Name';
+  String _phone = 'Add Phone Number';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedPath = prefs.getString('local_profile_image_path');
+    if (savedPath != null) {
+      setState(() {
+        _profileImagePath = savedPath;
+      });
+    }
+  }
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
@@ -25,12 +47,34 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       setState(() {
         _profileImagePath = pickedFile.path;
       });
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('local_profile_image_path', pickedFile.path);
     }
   }
 
   void _showEditProfileSheet() {
-    final nameController = TextEditingController(text: _name);
-    final phoneController = TextEditingController(text: _phone);
+    final authState = ref.read(authProvider);
+    UserModel? user;
+    if (authState is Authenticated) {
+      user = authState.user;
+    }
+
+    final nameController = TextEditingController(text: user?.fullName ?? _name);
+    final phoneController = TextEditingController(text: user?.phoneNumber ?? _phone);
+    final addressController = TextEditingController(text: user?.address ?? '');
+    final ageController = TextEditingController(text: user?.age?.toString() ?? '');
+
+    String? selectedSex = user?.sex;
+    if (selectedSex != 'Male' && selectedSex != 'Female' && selectedSex != 'Other') {
+        selectedSex = null;
+    }
+
+    List<String> selectedPandals = List.from(user?.interestedPandals ?? []);
+    final pandalOptions = [
+      'North Kolkata', 'South Kolkata', 'Central',
+      'Salt Lake', 'Behala', 'Howrah'
+    ];
+
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -39,78 +83,184 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.charcoal : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          return Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.charcoal : Colors.white,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Edit Profile',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: isDark ? AppColors.pureWhite : AppColors.deepMaroon,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    TextField(
+                      controller: nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Full Name',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        prefixIcon: const Icon(Icons.person, color: AppColors.antiqueGold),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: 'Phone Number',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        prefixIcon: const Icon(Icons.phone, color: AppColors.antiqueGold),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: addressController,
+                      decoration: InputDecoration(
+                        labelText: 'Address',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        prefixIcon: const Icon(Icons.location_on, color: AppColors.antiqueGold),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.map, color: AppColors.pujaRed),
+                          onPressed: () async {
+                            final selectedAddress = await Navigator.push<String>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const MapLocationPicker(),
+                              ),
+                            );
+                            
+                            if (selectedAddress != null) {
+                              setSheetState(() {
+                                addressController.text = selectedAddress;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: ageController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'Age',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              prefixIcon: const Icon(Icons.cake, color: AppColors.antiqueGold),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: selectedSex,
+                            decoration: InputDecoration(
+                              labelText: 'Sex',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              prefixIcon: const Icon(Icons.wc, color: AppColors.antiqueGold),
+                            ),
+                            items: ['Male', 'Female', 'Other']
+                                .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                                .toList(),
+                            onChanged: (val) {
+                              setSheetState(() {
+                                selectedSex = val;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Interested Pandals (Areas)',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? AppColors.pureWhite : AppColors.deepMaroon,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: pandalOptions.map((area) {
+                        final isSelected = selectedPandals.contains(area);
+                        return FilterChip(
+                          label: Text(area),
+                          selected: isSelected,
+                          onSelected: (bool selected) {
+                            setSheetState(() {
+                              if (selected) {
+                                selectedPandals.add(area);
+                              } else {
+                                selectedPandals.remove(area);
+                              }
+                            });
+                          },
+                          selectedColor: AppColors.antiqueGold.withOpacity(0.3),
+                          checkmarkColor: AppColors.pujaRed,
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          // Call backend update
+                          await ref.read(authProvider.notifier).updateProfile(
+                            fullName: nameController.text,
+                            phone: phoneController.text,
+                            address: addressController.text,
+                            age: int.tryParse(ageController.text) ?? 0,
+                            sex: selectedSex ?? 'Other',
+                            interestedPandals: selectedPandals,
+                          );
+                          if (context.mounted) {
+                            context.pop();
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.pujaRed,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('Save Changes', style: TextStyle(fontSize: 16, color: Colors.white)),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
-              Text(
-                'Edit Profile',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: isDark ? AppColors.pureWhite : AppColors.deepMaroon,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 24),
-              TextField(
-                controller: nameController,
-                decoration: InputDecoration(
-                  labelText: 'Full Name',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.person, color: AppColors.antiqueGold),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  labelText: 'Phone Number',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.phone, color: AppColors.antiqueGold),
-                ),
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _name = nameController.text;
-                      _phone = phoneController.text;
-                    });
-                    context.pop();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.pujaRed,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Text('Save Changes', style: TextStyle(fontSize: 16)),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -119,6 +269,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final authState = ref.watch(authProvider);
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.charcoal : AppColors.ivory,
@@ -132,7 +283,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         child: Column(
           children: [
             const SizedBox(height: 16),
-            _buildProfileHeader(theme),
+            _buildProfileHeader(theme, context),
+            if (authState is Authenticated && authState.user.address != null && authState.user.address!.isNotEmpty)
+              _buildAddressMapCard(authState.user.address!, theme, isDark),
             const SizedBox(height: 24),
             _buildStatsRow(theme, isDark),
             const SizedBox(height: 32),
@@ -153,7 +306,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildProfileHeader(ThemeData theme) {
+  Widget _buildProfileHeader(ThemeData theme, BuildContext context) {
+    final authState = ref.watch(authProvider);
+    UserModel? user;
+    if (authState is Authenticated) {
+      user = authState.user;
+    }
+
+    final displayName = user?.fullName ?? _name;
+    final displayPhone = user?.phoneNumber ?? _phone;
+    final profileUrl = user?.profileImageUrl;
+    final age = user?.age;
+    final sex = user?.sex;
+
     return Column(
       children: [
         Stack(
@@ -175,9 +340,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           image: FileImage(File(_profileImagePath!)),
                           fit: BoxFit.cover,
                         )
-                      : null,
+                      : profileUrl != null
+                          ? DecorationImage(
+                              image: NetworkImage(profileUrl),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
                 ),
-                child: _profileImagePath == null
+                child: _profileImagePath == null && profileUrl == null
                     ? const Center(
                         child: Icon(Icons.person, size: 40, color: AppColors.antiqueGold),
                       )
@@ -208,7 +378,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           children: [
             const SizedBox(width: 28), // Balances the edit icon on the right
             Text(
-              _name,
+              displayName,
               style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
@@ -220,9 +390,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         const SizedBox(height: 4),
         Text(
-          _phone,
+          displayPhone,
           style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
         ),
+        if (age != null || sex != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.antiqueGold.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              [if (sex != null) sex, if (age != null) '$age yrs'].join(' • '),
+              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.antiqueGold, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ]
       ],
     );
   }
@@ -269,13 +453,88 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  Widget _buildAddressMapCard(String address, ThemeData theme, bool isDark) {
+    return FutureBuilder<List<Location>>(
+      future: Geocoding().locationFromAddress(address).catchError((_) => <Location>[]),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Center(child: CircularProgressIndicator(color: AppColors.pujaRed)),
+          );
+        }
+        
+        LatLng center = const LatLng(22.5726, 88.3639); // Default Kolkata
+        bool found = false;
+        if (snapshot.hasData && snapshot.data!.isNotEmpty) {
+          center = LatLng(snapshot.data!.first.latitude, snapshot.data!.first.longitude);
+          found = true;
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(left: 24, right: 24, top: 24),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.charcoal : Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              if (!isDark) BoxShadow(color: AppColors.deepMaroon.withOpacity(0.08), blurRadius: 24, offset: const Offset(0, 8)),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.location_on, color: AppColors.pujaRed, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      address,
+                      style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  height: 150,
+                  width: double.infinity,
+                  child: GoogleMap(
+                    initialCameraPosition: CameraPosition(target: center, zoom: 14.0),
+                    scrollGesturesEnabled: false,
+                    zoomGesturesEnabled: false,
+                    tiltGesturesEnabled: false,
+                    rotateGesturesEnabled: false,
+                    mapToolbarEnabled: false,
+                    zoomControlsEnabled: false,
+                    markers: found ? {
+                      Marker(
+                        markerId: const MarkerId('center'),
+                        position: center,
+                        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+                      )
+                    } : {},
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildMenuSection(BuildContext context, ThemeData theme, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
-          _buildMenuItem(context, theme, Icons.route, 'My Puja Plans', isDark, onTap: () {}),
-          _buildMenuItem(context, theme, Icons.favorite_border, 'Saved Pandals', isDark, onTap: () {}),
+          _buildMenuItem(context, theme, Icons.route, 'My Puja Plans', isDark, onTap: () {
+            context.push('/plan');
+          }),
           _buildMenuItem(context, theme, Icons.confirmation_number_outlined, 'My Passes', isDark, onTap: () {
             context.push('/my-passes');
           }),
@@ -516,8 +775,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       child: SizedBox(
         width: double.infinity,
         child: TextButton.icon(
-          onPressed: () {
-            context.go('/login');
+          onPressed: () async {
+            await ref.read(authProvider.notifier).logout();
+            if (context.mounted) {
+              context.go('/login');
+            }
           },
           icon: const Icon(Icons.logout, color: AppColors.errorRed),
           label: const Text(

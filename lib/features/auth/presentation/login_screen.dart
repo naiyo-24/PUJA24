@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../shell/app_shell.dart';
+import 'providers/auth_provider.dart';
+import 'profile_creation_screen.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final TextEditingController _phoneController = TextEditingController();
 
   @override
@@ -23,6 +25,20 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final authState = ref.watch(authProvider);
+
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next is Authenticated) {
+        if (next.isNewUser) {
+           context.go('/create_profile');
+        } else {
+           context.go('/explore');
+        }
+      } else if (next is AuthError) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(next.message)));
+      }
+    });
+
     final viewInsets = MediaQuery.of(context).viewInsets;
     final bool isKeyboardOpen = viewInsets.bottom > 0;
     
@@ -39,14 +55,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Image.asset(
               'assets/login.png',
               fit: BoxFit.cover,
-            ),
-          ),
-          
-          // Dark overlay when keyboard is open to make text readable
-          IgnorePointer(
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              color: isKeyboardOpen ? Colors.black.withOpacity(0.7) : Colors.transparent,
             ),
           ),
           
@@ -69,14 +77,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             AnimatedContainer(
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeOut,
-                              height: isKeyboardOpen ? absoluteScreenHeight * 0.18 : absoluteScreenHeight * 0.38,
+                              height: absoluteScreenHeight * 0.55,
                             ),
                             
                             // Logo always visible but shrinks slightly
                             AnimatedContainer(
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeOut,
-                              height: isKeyboardOpen ? 55 : 90,
+                              height: 90,
                               child: Image.asset(
                                 'assets/logo.png',
                                 errorBuilder: (context, error, stackTrace) => 
@@ -96,19 +104,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(height: 20),
                             
-                            if (!isKeyboardOpen) ...[
-                              // Google Login Button
+                            // Google Login Button
                               SizedBox(
                                 width: double.infinity,
                                 height: 48,
-                                child: ElevatedButton(
+                                child: authState is AuthLoading 
+                                ? const Center(child: CircularProgressIndicator(color: AppColors.ivory))
+                                : ElevatedButton(
                                   onPressed: () {
-                                    // Navigate straight to profile creation for Google Login
-                                    context.go('/create_profile', extra: {
-                                      'loginMethod': 'google',
-                                      'name': 'Sayar Paul', // Mock fetched name
-                                      'photoUrl': 'https://ui-avatars.com/api/?name=Sayar+Paul&background=C62828&color=fff', // Mock Google photo
-                                    });
+                                    ref.read(authProvider.notifier).signInWithGoogle();
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.ivory,
@@ -128,102 +132,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                               
-                              const SizedBox(height: 24),
-                              
-                              // Divider
-                              Row(
-                                children: [
-                                  Expanded(child: Divider(color: AppColors.antiqueGold.withOpacity(0.3))),
-                                  const Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 12),
-                                    child: Text('or', style: TextStyle(color: AppColors.mutedGray, fontSize: 11)),
-                                  ),
-                                  Expanded(child: Divider(color: AppColors.antiqueGold.withOpacity(0.3))),
-                                ],
-                              ),
-                              
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 16),
                             ],
-                            
-                            // Phone Number Input
-                            Container(
-                              height: 48,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(24),
-                                border: Border.all(color: AppColors.antiqueGold.withOpacity(0.5)),
-                                color: Colors.transparent,
-                              ),
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.phone_android, color: AppColors.antiqueGold, size: 20),
-                                  const SizedBox(width: 8),
-                                  const Text('+91', style: TextStyle(color: AppColors.ivory, fontSize: 14)),
-                                  const Icon(Icons.keyboard_arrow_down, color: AppColors.ivory, size: 14),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _phoneController,
-                                      style: const TextStyle(color: AppColors.ivory, fontSize: 14),
-                                      decoration: InputDecoration(
-                                        hintText: 'Mobile Number',
-                                        hintStyle: TextStyle(color: AppColors.mutedGray.withOpacity(0.8), fontSize: 14),
-                                        border: InputBorder.none,
-                                        enabledBorder: InputBorder.none,
-                                        focusedBorder: InputBorder.none,
-                                        fillColor: Colors.transparent,
-                                        counterText: "",
-                                      ),
-                                      keyboardType: TextInputType.phone,
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.digitsOnly,
-                                      ],
-                                      maxLength: 10,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            
-                            const SizedBox(height: 12),
-                            
-                            // Get OTP Button
-                            SizedBox(
-                              width: double.infinity,
-                              height: 48,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  // Navigate to OTP screen with phone number
-                                  final phone = _phoneController.text.trim();
-                                  if (phone.length == 10) {
-                                    context.push('/otp', extra: {'phone': phone});
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Please enter a valid 10-digit number')),
-                                    );
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.pujaRed,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(24),
-                                    side: BorderSide(color: AppColors.antiqueGold.withOpacity(0.5)),
-                                  ),
-                                ),
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text('Get OTP', style: TextStyle(color: AppColors.ivory, fontSize: 15, fontWeight: FontWeight.bold)),
-                                    SizedBox(width: 6),
-                                    Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.ivory),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            
-                            const Spacer(),
-                            const SizedBox(height: 16),
-                          ],
                         ),
                       ),
                     ),

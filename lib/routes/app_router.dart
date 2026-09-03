@@ -60,13 +60,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.createProfile,
         path: '/create_profile',
         builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>? ?? {};
-          return ProfileCreationScreen(
-            loginMethod: extra['loginMethod'] as String? ?? 'phone',
-            prefilledPhone: extra['phone'] as String?,
-            prefilledName: extra['name'] as String?,
-            prefilledPhotoUrl: extra['photoUrl'] as String?,
-          );
+          return const ProfileCreationScreen();
         },
       ),
       GoRoute(
@@ -106,7 +100,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/pass-purchase',
-        builder: (context, state) => const PassPurchaseFormScreen(),
+        builder: (context, state) {
+          final packageId = state.extra as String? ?? '';
+          return PassPurchaseFormScreen(packageId: packageId);
+        },
       ),
       GoRoute(
         path: '/payment-success',

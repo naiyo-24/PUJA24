@@ -12,14 +12,12 @@ class MetroLiveMapScreen extends StatefulWidget {
 }
 
 class _MetroLiveMapScreenState extends State<MetroLiveMapScreen> {
-  late GoogleMapController _mapController;
+  GoogleMapController? _mapController;
   final Set<Marker> _markers = {};
+  final Set<Polyline> _polylines = {};
 
   // Center of Kolkata
-  static const CameraPosition _initialCameraPosition = CameraPosition(
-    target: LatLng(22.5726, 88.3639),
-    zoom: 11.5,
-  );
+  final LatLng _initialCenter = const LatLng(22.5726, 88.3639);
 
   @override
   void initState() {
@@ -29,29 +27,40 @@ class _MetroLiveMapScreenState extends State<MetroLiveMapScreen> {
 
   void _loadAllMetroStations() {
     for (var line in MetroData.lines) {
+      List<LatLng> linePoints = [];
       for (var station in line.stations) {
+        final point = LatLng(station.lat, station.lng);
+        linePoints.add(point);
+        
         _markers.add(
           Marker(
-            markerId: MarkerId('${line.id}_${station.name}'),
-            position: LatLng(station.lat, station.lng),
-            infoWindow: InfoWindow(
-              title: station.name,
-              snippet: station.isInterchange ? 'Interchange Station' : '${line.name} Station',
-            ),
-            icon: BitmapDescriptor.defaultMarkerWithHue(_getHueFromColor(line.color)),
+            markerId: MarkerId(station.name),
+            position: point,
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${station.name} (${station.isInterchange ? 'Interchange' : line.name})'),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue), // Simplified for now
+          ),
+        );
+      }
+      
+      if (linePoints.length > 1) {
+        _polylines.add(
+          Polyline(
+            polylineId: PolylineId(line.name),
+            points: linePoints,
+            color: line.color.withOpacity(0.7),
+            width: 4,
           ),
         );
       }
     }
     setState(() {});
-  }
-
-  double _getHueFromColor(Color color) {
-    if (color == Colors.blue) return BitmapDescriptor.hueAzure;
-    if (color == Colors.green) return BitmapDescriptor.hueGreen;
-    if (color == Colors.purple) return BitmapDescriptor.hueViolet;
-    if (color == Colors.orange) return BitmapDescriptor.hueOrange;
-    return BitmapDescriptor.hueRed;
   }
 
   @override
@@ -75,22 +84,20 @@ class _MetroLiveMapScreenState extends State<MetroLiveMapScreen> {
         ),
       ),
       body: GoogleMap(
-        initialCameraPosition: _initialCameraPosition,
-        onMapCreated: (GoogleMapController controller) {
-          _mapController = controller;
-        },
+        initialCameraPosition: CameraPosition(
+          target: _initialCenter,
+          zoom: 11.5,
+        ),
+        onMapCreated: (controller) => _mapController = controller,
         markers: _markers,
-        myLocationEnabled: true,
-        myLocationButtonEnabled: true,
-        zoomControlsEnabled: false,
-        mapToolbarEnabled: false,
+        polylines: _polylines,
       ),
     );
   }
 
   @override
   void dispose() {
-    _mapController.dispose();
     super.dispose();
   }
 }
+

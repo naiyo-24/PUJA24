@@ -3,18 +3,20 @@ import 'dart:ui';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme/app_colors.dart';
+import '../features/pandals/presentation/puja_map_screen.dart';
 
-class AppShell extends StatefulWidget {
+class AppShell extends ConsumerStatefulWidget {
   final StatefulNavigationShell navigationShell;
 
   const AppShell({super.key, required this.navigationShell});
 
   @override
-  State<AppShell> createState() => _AppShellState();
+  ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
+class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver {
   
   @override
   void initState() {
@@ -113,7 +115,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       child: Scaffold(
         extendBody: true,
         body: widget.navigationShell,
-        bottomNavigationBar: SafeArea(
+        bottomNavigationBar: ref.watch(mapNavigatingProvider) ? const SizedBox.shrink() : SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
             child: Container(

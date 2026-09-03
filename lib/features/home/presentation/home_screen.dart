@@ -1,29 +1,90 @@
+import 'package:latlong2/latlong.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'dart:io';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:play_install_referrer/play_install_referrer.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../pandals/presentation/providers/puja_list_provider.dart';
+import '../../pandals/presentation/widgets/pandal_card_skeleton.dart';
+import '../../auth/presentation/providers/auth_provider.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _currentLocationName = 'Kolkata';
   static bool _hasShownWelcomeModal = false;
 
   @override
   void initState() {
     super.initState();
+    _fetchLiveLocation();
+    _checkInstallReferrer();
     if (!_hasShownWelcomeModal) {
       _hasShownWelcomeModal = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showWelcomeModal(context);
       });
+    }
+  }
+
+  Future<void> _checkInstallReferrer() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('has_handled_referral') == true) return;
+
+    try {
+      final referrerDetails = await PlayInstallReferrer.installReferrer;
+      final referrer = referrerDetails.installReferrer;
+      if (referrer != null && referrer.contains('puja_id=')) {
+        final uri = Uri.parse('?\$referrer'); // Parse as query string
+        final pujaId = uri.queryParameters['puja_id'];
+        if (pujaId != null && mounted) {
+          await prefs.setBool('has_handled_referral', true);
+          context.push('/puja_detail/\$pujaId');
+        }
+      }
+    } catch (e) {
+      // Ignore errors if API is unavailable or times out
+    }
+  }
+
+  Future<void> _fetchLiveLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return;
+      }
+      
+      if (permission == LocationPermission.deniedForever) return;
+
+      final position = await Geolocator.getCurrentPosition();
+      final geocoding = Geocoding();
+      List<Placemark> placemarks = await geocoding.placemarkFromCoordinates(position.latitude, position.longitude);
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        if (mounted) {
+          setState(() {
+            _currentLocationName = place.locality ?? place.subLocality ?? place.name ?? 'Custom Location';
+          });
+        }
+      }
+    } catch (e) {
+      // Ignore errors and keep default
     }
   }
 
@@ -213,35 +274,39 @@ class _HomeScreenState extends State<HomeScreen> {
                       // Actions
                       Row(
                         children: [
-                          Stack(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: AppColors.border),
-                                ),
-                                child: const Icon(Icons.notifications_outlined, size: 20),
-                              ),
-                              Positioned(
-                                right: 0,
-                                top: 0,
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.pujaRed,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Text('3', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                                ),
-                              )
-                            ],
-                          ),
-                          const SizedBox(width: 8),
-                          const CircleAvatar(
-                            radius: 18,
-                            backgroundColor: AppColors.antiqueGold,
-                            child: Icon(Icons.person, color: AppColors.pureWhite),
+
+                          GestureDetector(
+                            onTap: () {
+                              context.go('/profile');
+                            },
+                            child: FutureBuilder<SharedPreferences>(
+                              future: SharedPreferences.getInstance(),
+                              builder: (context, snapshot) {
+                                String? localPath = snapshot.data?.getString('local_profile_image_path');
+                                final authState = ref.watch(authProvider);
+                                String? remotePath;
+                                if (authState is Authenticated) {
+                                  remotePath = authState.user.profileImageUrl;
+                                }
+                                
+                                if (localPath != null && localPath.isNotEmpty) {
+                                  return CircleAvatar(
+                                    radius: 18,
+                                    backgroundImage: FileImage(File(localPath)),
+                                  );
+                                } else if (remotePath != null && remotePath.isNotEmpty) {
+                                  return CircleAvatar(
+                                    radius: 18,
+                                    backgroundImage: NetworkImage(remotePath),
+                                  );
+                                }
+                                return const CircleAvatar(
+                                  radius: 18,
+                                  backgroundColor: AppColors.antiqueGold,
+                                  child: Icon(Icons.person, color: AppColors.pureWhite),
+                                );
+                              },
+                            ),
                           )
                         ],
                       ),
@@ -438,20 +503,32 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 16),
               
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        context.push('/puja_detail/ekdalia_evergreen');
-                      },
-                      child: const _PandalCard(name: 'Ekdalia Evergreen', distance: '1.2 km', rating: '4.8'),
+              SizedBox(
+                height: 220,
+                child: ref.watch(popularPujasProvider).when(
+                  data: (pandals) {
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: pandals.map((pandal) {
+                        return GestureDetector(
+                          onTap: () {
+                            context.push('/puja_detail/${pandal.id}');
+                          },
+                          child: _PandalCard(name: pandal.name, distance: pandal.distance, rating: pandal.rating),
+                        );
+                      }).toList(),
                     ),
-                    _PandalCard(name: 'Maddox Square', distance: '2.1 km', rating: '4.7'),
-                    _PandalCard(name: 'Sreebhumi Sporting Club', distance: '2.8 km', rating: '4.6'),
-                  ],
+                  );
+                },
+                loading: () => SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: List.generate(3, (index) => const PandalCardSkeleton()),
+                  ),
                 ),
+                error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
+              ),
               ),
               const SizedBox(height: 24),
 

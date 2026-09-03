@@ -1,49 +1,130 @@
-import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/puja_detail_model.dart';
-import '../../../../core/network/api_config.dart';
+import '../../../../core/network/graphql_service.dart';
 
 // Provides the repository instance
 final pujaRepositoryProvider = Provider<PujaRepository>((ref) {
-  return PujaRepository();
+  return PujaRepository(GraphQLService());
 });
 
 class PujaRepository {
-  /// Fetches Puja details.
-  /// 
-  /// Currently simulates a network request since the backend is not fully ready.
-  /// Once ready, replace this with an http.get call to [ApiConfig.baseUrl]/pandals/$id
-  Future<PujaDetailModel> getPujaDetails(String id) async {
-    // 1. Simulate network latency (1.5 seconds)
-    await Future.delayed(const Duration(milliseconds: 1500));
+  final GraphQLService _graphQLService;
 
-    // 2. Simulate JSON response from backend
-    final String mockJsonResponse = '''
-    {
-      "id": "$id",
-      "name": "Ekdalia Evergreen",
-      "area": "Ballygunge",
-      "rating": "4.8",
-      "distance": "1.2 km",
-      "historySummary": "Established in 1943, Ekdalia Evergreen is renowned for its traditional and monumental pandal architecture. It holds a legacy of recreating world-famous temples and monuments.",
-      "theme2026": "Echoes of the Chola Dynasty (Tribute to Brihadeeswara Temple)",
-      "idolArtist": "Sanatan Dinda",
-      "pandalDesigner": "Bhabatosh Sutar",
-      "imageUrl": "assets/images/ad1.png",
-      "totalPhotos": 42,
-      "crowdStatus": "High",
-      "queueTimeMins": 45,
-      "amenities": ["Wheelchair", "Parking", "First Aid", "Washroom", "VIP Entry"],
-      "nearestMetro": "Kalighat (1.5 km)",
-      "nearestBusStop": "Ekdalia More (200m)",
-      "nearestCafe": "6 Ballygunge Place (400m), Barista (500m)",
-      "nearestHospital": "AMRI Hospital, Gariahat (1.2 km)",
-      "payAndUseToilet": "Near Ekdalia Park Gate 2 (50m)"
-    }
+  PujaRepository(this._graphQLService);
+
+  /// Fetches a list of Pandals using GraphQL
+  Future<List<PujaDetailModel>> getPandals({String? area, bool? isPopular, double? lat, double? lng}) async {
+    const String query = '''
+      query GetPandals(\$area: String, \$isPopular: Boolean, \$lat: Float, \$lng: Float) {
+        pandals(area: \$area, isPopular: \$isPopular, lat: \$lat, lng: \$lng) {
+          id
+          name
+          area
+          rating
+          distance
+          latitude
+          longitude
+          imageUrl
+          theme2026
+          crowdStatus
+          queueTimeMins
+          placeMetadata
+        }
+      }
     ''';
 
-    // 3. Parse JSON and return model
-    final Map<String, dynamic> data = json.decode(mockJsonResponse);
-    return PujaDetailModel.fromJson(data);
+    final variables = {
+      if (area != null) 'area': area,
+      if (isPopular != null) 'isPopular': isPopular,
+      if (lat != null) 'lat': lat,
+      if (lng != null) 'lng': lng,
+    };
+
+    final response = await _graphQLService.query(query, variables: variables);
+    
+    if (response['pandals'] != null) {
+      final List<dynamic> data = response['pandals'];
+      return data.map((json) => PujaDetailModel.fromJson(json)).toList();
+    }
+    
+    return [];
+  }
+
+  /// Fetches Puja details using GraphQL.
+  Future<PujaDetailModel> getPujaDetails(String id) async {
+    const String query = '''
+      query GetPlaceDetails(\$id: UUID!) {
+        placeDetails(placeId: \$id) {
+          id
+          name
+          area
+          rating
+          distance
+          latitude
+          longitude
+          imageUrl
+          theme2026
+          crowdStatus
+          queueTimeMins
+          placeMetadata
+        }
+      }
+    ''';
+
+    final response = await _graphQLService.query(query, variables: {'id': id});
+    
+    if (response['placeDetails'] != null) {
+      return PujaDetailModel.fromJson(response['placeDetails']);
+    } else {
+      throw Exception('Pandal not found');
+    }
+  }
+
+  /// Toggles the saved status of a Pandal
+  Future<bool> toggleSavedPandal(String placeId) async {
+    const String mutation = '''
+      mutation ToggleSavedPlace(\$placeId: UUID!) {
+        toggleSavedPlace(placeId: \$placeId) {
+          status
+        }
+      }
+    ''';
+
+    try {
+      final response = await _graphQLService.query(mutation, variables: {'placeId': placeId});
+      if (response['toggleSavedPlace'] != null) {
+        return response['toggleSavedPlace']['status'] == 'saved';
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Submits a live update for Rain and Crowd status
+  Future<bool> submitLiveUpdate(String placeId, String rainStatus, String crowdStatus) async {
+    // TODO: Replace with the actual GraphQL mutation when the backend is ready
+    const String mutation = '''
+      mutation SubmitLiveUpdate(\$placeId: UUID!, \$rainStatus: String!, \$crowdStatus: String!) {
+        submitLiveUpdate(placeId: \$placeId, rainStatus: \$rainStatus, crowdStatus: \$crowdStatus) {
+          success
+        }
+      }
+    ''';
+
+    try {
+      final response = await _graphQLService.query(mutation, variables: {
+        'placeId': placeId,
+        'rainStatus': rainStatus,
+        'crowdStatus': crowdStatus,
+      });
+      
+      if (response['submitLiveUpdate'] != null) {
+        return response['submitLiveUpdate']['success'] == true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
   }
 }

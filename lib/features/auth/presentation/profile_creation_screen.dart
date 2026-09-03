@@ -2,32 +2,23 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'providers/auth_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:dio/dio.dart';
 import 'package:durga_puja_explorer/core/theme/app_colors.dart';
 
-class ProfileCreationScreen extends StatefulWidget {
-  final String loginMethod; // 'phone' or 'google'
-  final String? prefilledPhone;
-  final String? prefilledName;
-  final String? prefilledPhotoUrl;
-
-  const ProfileCreationScreen({
-    super.key,
-    this.loginMethod = 'phone',
-    this.prefilledPhone,
-    this.prefilledName,
-    this.prefilledPhotoUrl,
-  });
+class ProfileCreationScreen extends ConsumerStatefulWidget {
+  const ProfileCreationScreen({super.key});
 
   @override
-  State<ProfileCreationScreen> createState() => _ProfileCreationScreenState();
+  ConsumerState<ProfileCreationScreen> createState() => _ProfileCreationScreenState();
 }
 
-class _ProfileCreationScreenState extends State<ProfileCreationScreen> with SingleTickerProviderStateMixin {
+class _ProfileCreationScreenState extends ConsumerState<ProfileCreationScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   
   // Controllers
@@ -42,6 +33,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> with Sing
   File? _profileImage;
   bool _pandalsError = false;
   bool _isFetchingLocation = false;
+  String? _prefilledPhotoUrl;
 
   // Animation
   late AnimationController _animController;
@@ -59,8 +51,20 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> with Sing
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.prefilledName);
-    _phoneController = TextEditingController(text: widget.prefilledPhone);
+    
+    // Auto-fetch name and photo from Google Auth State
+    final authState = ref.read(authProvider);
+    String? prefilledName;
+    String? prefilledPhone;
+    
+    if (authState is Authenticated) {
+      prefilledName = authState.user.fullName;
+      prefilledPhone = authState.user.phoneNumber;
+      _prefilledPhotoUrl = authState.user.profileImageUrl;
+    }
+
+    _nameController = TextEditingController(text: prefilledName);
+    _phoneController = TextEditingController(text: prefilledPhone);
     _addressController = TextEditingController();
     _ageController = TextEditingController();
     
@@ -257,8 +261,18 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> with Sing
     });
 
     if (_formKey.currentState!.validate() && !_pandalsError) {
-      // Navigate to home on success
-      context.go('/explore');
+      ref.read(authProvider.notifier).updateProfile(
+        fullName: _nameController.text,
+        phone: _phoneController.text,
+        address: _addressController.text,
+        age: int.tryParse(_ageController.text) ?? 0,
+        sex: _selectedSex ?? 'Other',
+        interestedPandals: _selectedPandals.toList(),
+      ).then((_) {
+        if (mounted) {
+           context.go('/explore');
+        }
+      });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -337,9 +351,9 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> with Sing
                     color: Colors.grey.shade100,
                     child: _profileImage != null
                         ? Image.file(_profileImage!, fit: BoxFit.cover)
-                        : widget.prefilledPhotoUrl != null
+                        : _prefilledPhotoUrl != null
                             ? Image.network(
-                                widget.prefilledPhotoUrl!,
+                                _prefilledPhotoUrl!,
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 60, color: Colors.grey),
                               )
@@ -381,7 +395,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> with Sing
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isPhoneLogin = widget.loginMethod == 'phone';
+    final isPhoneLogin = false;
 
     return Scaffold(
       backgroundColor: Colors.white,

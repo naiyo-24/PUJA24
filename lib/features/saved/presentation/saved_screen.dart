@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../domain/models/saved_item_model.dart';
+import '../../pandals/domain/models/puja_detail_model.dart';
 import 'providers/saved_provider.dart';
 
 class SavedScreen extends ConsumerStatefulWidget {
@@ -18,7 +18,7 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
   @override
   Widget build(BuildContext context) {
     final activeFilter = ref.watch(savedFilterProvider);
-    final items = ref.watch(filteredSavedItemsProvider);
+    final itemsAsync = ref.watch(savedItemsProvider);
 
     const bgColor = Color(0xFF090909);
     const goldColor = Color(0xFFD4A24C);
@@ -123,47 +123,64 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
           ),
 
           // ── Saved Items List or Empty State ──────────────────────────────
-          if (items.isEmpty)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.favorite_border, size: 64, color: goldColor.withOpacity(0.5)),
-                    const SizedBox(height: 16),
-                    Text('No saved $activeFilter yet', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    const Text('Tap the heart icon to save places here.', style: TextStyle(color: Colors.white54, fontSize: 14)),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: () => context.go('/explore'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: goldColor,
-                        foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      icon: const Icon(Icons.search, size: 20),
-                      label: const Text('Explore', style: TextStyle(fontWeight: FontWeight.bold)),
+          itemsAsync.when(
+            data: (allItems) {
+              // Apply filter locally
+              List<PujaDetailModel> items = allItems;
+              if (activeFilter == 'Cafes') {
+                items = []; // We don't have cafe data yet
+              }
+
+              if (items.isEmpty) {
+                return SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.favorite_border, size: 64, color: goldColor.withOpacity(0.5)),
+                        const SizedBox(height: 16),
+                        Text('No saved $activeFilter yet', style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        const Text('Tap the heart icon to save places here.', style: TextStyle(color: Colors.white54, fontSize: 14)),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: () => context.go('/explore'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: goldColor,
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          icon: const Icon(Icons.search, size: 20),
+                          label: const Text('Explore', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
+                );
+              }
+              
+              return SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final item = items[index];
+                      return _buildSavedCard(item, goldColor);
+                    },
+                    childCount: items.length,
+                  ),
                 ),
-              ),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final item = items[index];
-                    return _buildSavedCard(item, goldColor);
-                  },
-                  childCount: items.length,
-                ),
-              ),
+              );
+            },
+            loading: () => SliverFillRemaining(
+              child: Center(child: CircularProgressIndicator(color: goldColor)),
             ),
+            error: (err, stack) => const SliverFillRemaining(
+              child: Center(child: Text('Error loading saved items', style: TextStyle(color: Colors.red))),
+            ),
+          ),
             
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
@@ -171,94 +188,107 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
     );
   }
 
-  Widget _buildSavedCard(SavedItemModel item, Color goldColor) {
-    final isRestaurant = item.type == SavedItemType.restaurant;
-    final icon = isRestaurant ? Icons.restaurant : Icons.temple_hindu;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF141414),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: goldColor.withOpacity(0.2)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Image
-          ClipRRect(
-            borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
-            child: Image.asset(
-              item.imageUrl,
-              width: 100,
-              height: 120, // Fixed height
-              fit: BoxFit.cover,
-            ),
-          ),
-          // Details
-          Expanded(
-            child: SizedBox(
-              height: 120, // Match image height
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.title,
-                                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                item.subtitle,
-                                style: const TextStyle(color: Colors.white70, fontSize: 12),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(Icons.favorite, color: Colors.redAccent, size: 20),
-                      ],
+  Widget _buildSavedCard(PujaDetailModel item, Color goldColor) {
+    return GestureDetector(
+      onTap: () => context.push('/puja_detail/${item.id}'),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF141414),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: goldColor.withOpacity(0.2)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image
+            ClipRRect(
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+              child: item.imageUrl.startsWith('http')
+                  ? Image.network(
+                      item.imageUrl,
+                      width: 100,
+                      height: 120, // Fixed height
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        width: 100,
+                        height: 120,
+                        color: const Color(0xFF2A2A2A),
+                        child: const Icon(Icons.image, color: Colors.white54),
+                      ),
+                    )
+                  : Container(
+                      width: 100,
+                      height: 120,
+                      color: const Color(0xFF2A2A2A),
+                      child: const Icon(Icons.image, color: Colors.white54),
                     ),
-                    Row(
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.location_on, color: goldColor, size: 14),
-                            const SizedBox(width: 4),
-                            Text(item.distance, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                          ],
-                        ),
-                        if (isRestaurant && item.rating != null) ...[
-                          const SizedBox(width: 12),
+            ),
+            // Details
+            Expanded(
+              child: SizedBox(
+                height: 120, // Match image height
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.name,
+                                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  item.area,
+                                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.favorite, color: Colors.redAccent, size: 20),
+                        ],
+                      ),
+                      Row(
+                        children: [
                           Row(
                             children: [
-                              const Icon(Icons.star, color: Colors.amber, size: 14),
+                              Icon(Icons.location_on, color: goldColor, size: 14),
                               const SizedBox(width: 4),
-                              Text(item.rating!, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                              Text('${item.distance} km', style: const TextStyle(color: Colors.white70, fontSize: 12)),
                             ],
                           ),
+                          if (double.tryParse(item.rating) != null && double.parse(item.rating) > 0) ...[
+                            const SizedBox(width: 12),
+                            Row(
+                              children: [
+                                const Icon(Icons.star, color: Colors.amber, size: 14),
+                                const SizedBox(width: 4),
+                                Text(item.rating, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                              ],
+                            ),
+                          ],
                         ],
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
