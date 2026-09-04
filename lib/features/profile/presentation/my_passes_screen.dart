@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../home/presentation/providers/pass_provider.dart';
+import '../../auth/presentation/providers/auth_provider.dart';
 
 class MyPassesScreen extends ConsumerWidget {
   const MyPassesScreen({super.key});
@@ -15,6 +16,8 @@ class MyPassesScreen extends ConsumerWidget {
     const goldColor = Color(0xFFD4A24C);
     
     final vouchersState = ref.watch(myVouchersProvider);
+    final authState = ref.watch(authProvider);
+    final userName = authState is Authenticated ? authState.user.fullName : 'Guest';
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -114,7 +117,7 @@ class MyPassesScreen extends ConsumerWidget {
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton.icon(
-                              onPressed: () => _showPassDetailsSheet(context, goldColor, voucher.voucherCode, voucher.paymentReference),
+                              onPressed: () => _showPassDetailsSheet(context, goldColor, voucher.voucherCode, voucher.paymentReference, userName),
                               icon: const Icon(Icons.qr_code_scanner, color: Colors.black),
                               label: const Text(
                                 'View Pass & QR Code',
@@ -158,18 +161,19 @@ class MyPassesScreen extends ConsumerWidget {
     );
   }
 
-  void _showPassDetailsSheet(BuildContext context, Color goldColor, String voucherCode, String paymentReference) {
+  void _showPassDetailsSheet(BuildContext context, Color goldColor, String voucherCode, String paymentReference, String userName) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.85,
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 24),
         decoration: const BoxDecoration(
           color: Color(0xFF141414),
           borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 12),
             Container(width: 40, height: 5, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(10))),
@@ -208,9 +212,9 @@ class MyPassesScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 40),
               child: Column(
                 children: [
-                  _buildDetailRow('Pass Holder', 'Primary User', goldColor),
+                  _buildDetailRow('Pass Holder', userName, goldColor),
                   const SizedBox(height: 16),
-                  _buildDetailRow('Admit', '3 Persons', goldColor),
+                  _buildDetailRow('Admit', '4 Persons', goldColor),
                   const SizedBox(height: 16),
                   _buildDetailRow('Pass ID', voucherCode.substring(0, 8).toUpperCase(), goldColor),
                   const SizedBox(height: 16),

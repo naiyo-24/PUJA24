@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_colors.dart';
 import 'providers/food_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../domain/models/restaurant_model.dart';
+import '../../pandals/domain/models/puja_detail_model.dart';
+import '../../pandals/presentation/puja_map_screen.dart';
 
 class CafeDirectoryScreen extends ConsumerStatefulWidget {
   const CafeDirectoryScreen({super.key});
@@ -24,6 +30,54 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
     {'icon': Icons.ramen_dining, 'label': 'Chinese'},
   ];
 
+  Position? _currentPosition;
+  bool _isLoadingLocation = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLocation();
+    _searchController.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
+
+  Future<void> _fetchLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) setState(() => _isLoadingLocation = false);
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) setState(() => _isLoadingLocation = false);
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) setState(() => _isLoadingLocation = false);
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      if (mounted) {
+        setState(() {
+          _currentPosition = position;
+          _isLoadingLocation = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingLocation = false);
+    }
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -32,17 +86,46 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final foodAsync = ref.watch(foodProvider);
-    
     const bgColor = Color(0xFF090909);
     const goldColor = Color(0xFFD4A24C);
 
+    if (_isLoadingLocation) {
+      return const Scaffold(
+        backgroundColor: bgColor,
+        body: Center(child: CircularProgressIndicator(color: goldColor)),
+      );
+    }
+
+    final locationParams = _currentPosition != null
+        ? (
+            lat: _currentPosition!.latitude, 
+            lng: _currentPosition!.longitude, 
+            searchQuery: _searchController.text.isNotEmpty ? _searchController.text : null,
+            category: _categories[_selectedCategory]['label'] as String != 'All' ? _categories[_selectedCategory]['label'] as String : null
+          )
+        : (
+            lat: 22.5726, 
+            lng: 88.3639, 
+            searchQuery: _searchController.text.isNotEmpty ? _searchController.text : null,
+            category: _categories[_selectedCategory]['label'] as String != 'All' ? _categories[_selectedCategory]['label'] as String : null
+          );
+        
+    final foodAsync = ref.watch(foodProvider(locationParams));
+
     return Scaffold(
       backgroundColor: bgColor,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // ── Sticky Header / Hero Section ────────────────────────────────────────────
+      body: NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification scrollInfo) {
+          if (scrollInfo.metrics.maxScrollExtent > 0 && 
+              scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+            ref.read(foodProvider(locationParams).notifier).loadMore();
+          }
+          return true;
+        },
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            // ── Sticky Header / Hero Section ────────────────────────────────────────────
           SliverAppBar(
             expandedHeight: 280.0,
             floating: false,
@@ -224,11 +307,11 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
             ),
           ),
           
-          // ── Data Sections ────────────────────────────────────────────────
           foodAsync.when(
-            data: (restaurants) {
+            data: (foodState) {
+              final restaurants = foodState.restaurants;
+
               final specials = restaurants.where((r) => r.isPujaSpecial).toList();
-              // For demo purposes, we will pick the first restaurant as the Featured Today
               final featured = restaurants.isNotEmpty ? restaurants[0] : null;
 
               return SliverToBoxAdapter(
@@ -236,7 +319,7 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-                    // Dining Stats Row (No Delivery!)
+                    // Dining Stats Row
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Container(
@@ -249,7 +332,7 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _buildStatItem(Icons.restaurant, '142+', 'Dine-In', goldColor),
+                            _buildStatItem(Icons.restaurant, '480+', 'Dine-In', goldColor),
                             _buildDivider(),
                             _buildStatItem(Icons.nightlight_round, '24/7', 'Open Late', goldColor),
                             _buildDivider(),
@@ -262,7 +345,6 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // ── Featured Today (Maha Ashtami Special) ──
                     if (featured != null) ...[
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -270,7 +352,7 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
                           children: [
                             Icon(Icons.star, color: goldColor, size: 20),
                             const SizedBox(width: 8),
-                            const Text('Maha Ashtami Featured', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                            const Text('Featured Today', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),
@@ -285,93 +367,46 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
                       const SizedBox(height: 32),
                     ],
                     
-                    // ── Puja Specials Carousel ──
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.spa, color: goldColor, size: 20),
-                              const SizedBox(width: 8),
-                              const Text('Puja Specials', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text('See all', style: TextStyle(color: goldColor, fontSize: 13, fontWeight: FontWeight.bold)),
-                              const SizedBox(width: 4),
-                              Icon(Icons.arrow_forward, color: goldColor, size: 14),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 290,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
+                    if (specials.isNotEmpty) ...[
+                      Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
-                        itemCount: specials.length,
-                        itemBuilder: (context, index) => GestureDetector(
-                          onTap: () => context.push('/restaurant_detail/${specials[index].id}', extra: specials[index]),
-                          child: _buildSpecialCard(specials[index], goldColor),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    
-                    // ── All Nearby Header ──
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.location_on, color: goldColor, size: 20),
-                              const SizedBox(width: 8),
-                              const Text('Nearby Restaurants', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1E160C),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: goldColor.withOpacity(0.3)),
-                            ),
-                            child: Row(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: goldColor.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.format_list_bulleted, color: goldColor, size: 14),
-                                      const SizedBox(width: 4),
-                                      Text('List', style: TextStyle(color: goldColor, fontSize: 12, fontWeight: FontWeight.bold)),
-                                    ],
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.map_outlined, color: Colors.white70, size: 14),
-                                      const SizedBox(width: 4),
-                                      const Text('Map', style: TextStyle(color: Colors.white70, fontSize: 12)),
-                                    ],
-                                  ),
-                                ),
+                                Icon(Icons.spa, color: goldColor, size: 20),
+                                const SizedBox(width: 8),
+                                const Text('Puja Specials', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                               ],
                             ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 290,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: specials.length,
+                          itemBuilder: (context, index) => GestureDetector(
+                            onTap: () => context.push('/restaurant_detail/${specials[index].id}', extra: specials[index]),
+                            child: _buildSpecialCard(specials[index], goldColor),
                           ),
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                    ],
+                    
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          Icon(Icons.location_on, color: goldColor, size: 20),
+                          const SizedBox(width: 8),
+                          const Text('Nearby Restaurants', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
@@ -382,15 +417,101 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
                           onTap: () => context.push('/restaurant_detail/${r.id}', extra: r),
                           child: _buildListTile(r, goldColor),
                         )).toList(),
+                        
+                    if (foodState.isLoadingMore)
+                      const Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: Center(child: CircularProgressIndicator(color: Color(0xFFD4A24C))),
+                      ),
+                    
                     const SizedBox(height: 120),
                   ],
                 ),
               );
             },
-            loading: () => const SliverFillRemaining(child: Center(child: CircularProgressIndicator(color: Color(0xFFD4A24C)))),
-            error: (e, _) => SliverFillRemaining(child: Center(child: Text('Error: \$e', style: const TextStyle(color: Colors.red)))),
+            loading: () => SliverFillRemaining(
+              child: _buildSkeletonLoader(goldColor),
+            ),
+            error: (e, _) => SliverFillRemaining(child: Center(child: Text('Error: $e', style: const TextStyle(color: Colors.red)))),
           ),
         ],
+      ),
+      ),
+    );
+  }
+
+  Widget _buildSkeletonLoader(Color goldColor) {
+    return Shimmer.fromColors(
+      baseColor: const Color(0xFF2A2A2A),
+      highlightColor: const Color(0xFF4A4A4A),
+      child: ListView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        itemCount: 5,
+        itemBuilder: (context, index) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            height: 120,
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A1A),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 100,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(height: 16, width: 150, color: Colors.white),
+                      const SizedBox(height: 8),
+                      Container(height: 12, width: 100, color: Colors.white),
+                      const SizedBox(height: 16),
+                      Container(height: 12, width: 200, color: Colors.white),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildNetworkImage(String url, {double? width, double? height}) {
+    if (url.isEmpty) {
+      return Container(
+        width: width,
+        height: height,
+        color: const Color(0xFF2A2A2A),
+        child: const Icon(Icons.restaurant, color: Colors.white24, size: 32),
+      );
+    }
+    return CachedNetworkImage(
+      imageUrl: url,
+      width: width,
+      height: height,
+      fit: BoxFit.cover,
+      placeholder: (context, url) => Shimmer.fromColors(
+        baseColor: const Color(0xFF2A2A2A),
+        highlightColor: const Color(0xFF4A4A4A),
+        child: Container(width: width, height: height, color: Colors.white),
+      ),
+      errorWidget: (context, url, error) => Container(
+        width: width,
+        height: height,
+        color: const Color(0xFF2A2A2A),
+        child: const Icon(Icons.error_outline, color: Colors.white24, size: 32),
       ),
     );
   }
@@ -468,11 +589,10 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                child: Image.asset(
+                child: _buildNetworkImage(
                   r.imageUrl,
                   height: 180,
                   width: double.infinity,
-                  fit: BoxFit.cover,
                 ),
               ),
               Container(
@@ -556,19 +676,49 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
                       ),
                     ),
                     // Get Directions Button
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: goldColor.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: goldColor.withOpacity(0.5)),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.directions, color: goldColor, size: 16),
-                          const SizedBox(width: 6),
-                          Text('Directions', style: TextStyle(color: goldColor, fontSize: 12, fontWeight: FontWeight.bold)),
-                        ],
+                    GestureDetector(
+                      onTap: () {
+                        final mapTarget = PujaDetailModel(
+                          id: r.id,
+                          name: r.name,
+                          area: r.area,
+                          rating: r.rating,
+                          distance: r.distance,
+                          latitude: r.latitude,
+                          longitude: r.longitude,
+                          historySummary: '',
+                          theme2026: '',
+                          idolArtist: '',
+                          pandalDesigner: '',
+                          imageUrl: r.imageUrl,
+                          totalPhotos: 0,
+                          crowdStatus: 'Moderate',
+                          queueTimeMins: 0,
+                          amenities: [],
+                          nearestMetro: '',
+                          nearestBusStop: '',
+                          nearestCafe: '',
+                          nearestHospital: '',
+                          payAndUseToilet: '',
+                          rainStatus: 'Clear',
+                        );
+                        ref.read(navigationTargetProvider.notifier).state = mapTarget;
+                        context.go('/map');
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: goldColor.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: goldColor.withOpacity(0.5)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.directions, color: goldColor, size: 16),
+                            const SizedBox(width: 6),
+                            Text('Directions', style: TextStyle(color: goldColor, fontSize: 12, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -597,11 +747,10 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                child: Image.asset(
+                child: _buildNetworkImage(
                   r.imageUrl,
                   height: 140,
                   width: double.infinity,
-                  fit: BoxFit.cover,
                 ),
               ),
               Container(
@@ -668,7 +817,7 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
-                const Text('Park Circus', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                Text(r.area, style: const TextStyle(color: Colors.white70, fontSize: 11)),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -729,11 +878,10 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
             borderRadius: BorderRadius.circular(12),
             child: Stack(
               children: [
-                Image.asset(
+                _buildNetworkImage(
                   r.imageUrl,
                   width: 90,
                   height: 110,
-                  fit: BoxFit.cover,
                 ),
                 Positioned(
                   top: 6,
@@ -768,14 +916,13 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
-                const Text('Bhowanipore', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                Text(r.area, style: const TextStyle(color: Colors.white70, fontSize: 11)),
                 const SizedBox(height: 6),
                 Row(
                   children: [
                     const Icon(Icons.star, color: Color(0xFFD4A24C), size: 14),
                     const SizedBox(width: 4),
                     Text(r.rating, style: const TextStyle(color: Color(0xFFD4A24C), fontSize: 12, fontWeight: FontWeight.bold)),
-                    const Text(' (780)', style: TextStyle(color: Colors.white54, fontSize: 12)),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -807,19 +954,49 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
                 ),
                 const SizedBox(height: 12),
                 // Directions button
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: goldColor.withOpacity(0.4)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.directions, color: goldColor, size: 14),
-                      const SizedBox(width: 6),
-                      Text('Get Directions', style: TextStyle(color: goldColor, fontSize: 12, fontWeight: FontWeight.bold)),
-                    ],
+                GestureDetector(
+                  onTap: () {
+                    final mapTarget = PujaDetailModel(
+                      id: r.id,
+                      name: r.name,
+                      area: r.area,
+                      rating: r.rating,
+                      distance: r.distance,
+                      latitude: r.latitude,
+                      longitude: r.longitude,
+                      historySummary: '',
+                      theme2026: '',
+                      idolArtist: '',
+                      pandalDesigner: '',
+                      imageUrl: r.imageUrl,
+                      totalPhotos: 0,
+                      crowdStatus: 'Moderate',
+                      queueTimeMins: 0,
+                      amenities: [],
+                      nearestMetro: '',
+                      nearestBusStop: '',
+                      nearestCafe: '',
+                      nearestHospital: '',
+                      payAndUseToilet: '',
+                      rainStatus: 'Clear',
+                    );
+                    ref.read(navigationTargetProvider.notifier).state = mapTarget;
+                    context.go('/map');
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: goldColor.withOpacity(0.4)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.directions, color: goldColor, size: 14),
+                        const SizedBox(width: 6),
+                        Text('Get Directions', style: TextStyle(color: goldColor, fontSize: 12, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
                   ),
                 ),
               ],

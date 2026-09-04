@@ -20,7 +20,7 @@ class PandalCardSkeleton extends StatelessWidget {
         children: [
           const SkeletonLoader(
             width: double.infinity,
-            height: 110, // Reduced from 160 to prevent overflow in horizontal list
+            height: 100, // Reduced to prevent overflow in horizontal list
             borderRadius: 24, // Matches the top rounding
           ),
           Padding(

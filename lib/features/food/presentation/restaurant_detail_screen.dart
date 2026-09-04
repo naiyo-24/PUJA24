@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../pandals/domain/models/puja_detail_model.dart';
+import '../../pandals/presentation/puja_map_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../pandals/presentation/providers/save_pandal_provider.dart';
 import '../domain/models/restaurant_model.dart';
 
-class RestaurantDetailScreen extends StatelessWidget {
+class RestaurantDetailScreen extends ConsumerWidget {
   final RestaurantModel restaurant;
 
   const RestaurantDetailScreen({super.key, required this.restaurant});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     const bgColor = Color(0xFF090909);
     const goldColor = Color(0xFFD4A24C);
 
@@ -39,24 +46,42 @@ class RestaurantDetailScreen extends StatelessWidget {
             actions: [
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
-                    shape: BoxShape.circle,
+                child: GestureDetector(
+                  onTap: () {
+                    ref.read(savedPandalIdsProvider.notifier).toggleSave(restaurant.id);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      ref.watch(savedPandalIdsProvider).contains(restaurant.id)
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      color: ref.watch(savedPandalIdsProvider).contains(restaurant.id)
+                          ? Colors.red
+                          : Colors.white,
+                      size: 20,
+                    ),
                   ),
-                  child: const Icon(Icons.favorite_border, color: Colors.white, size: 20),
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
-                    shape: BoxShape.circle,
+                child: GestureDetector(
+                  onTap: () {
+                    Share.share('Check out ${restaurant.name} at ${restaurant.area} on PUJA24! \\nRating: ${restaurant.rating}⭐');
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.share, color: Colors.white, size: 20),
                   ),
-                  child: const Icon(Icons.share, color: Colors.white, size: 20),
                 ),
               ),
             ],
@@ -64,10 +89,16 @@ class RestaurantDetailScreen extends StatelessWidget {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.asset(
-                    restaurant.imageUrl,
-                    fit: BoxFit.cover,
-                  ),
+                  restaurant.imageUrl.startsWith('http')
+                    ? CachedNetworkImage(
+                        imageUrl: restaurant.imageUrl,
+                        fit: BoxFit.cover,
+                        errorWidget: (context, url, error) => Image.asset('assets/images/cafe.png', fit: BoxFit.cover),
+                      )
+                    : Image.asset(
+                        restaurant.imageUrl.isNotEmpty ? restaurant.imageUrl : 'assets/images/cafe.png',
+                        fit: BoxFit.cover,
+                      ),
                   // Gradient for text readability
                   Container(
                     decoration: BoxDecoration(
@@ -153,7 +184,7 @@ class RestaurantDetailScreen extends StatelessWidget {
                                 const Icon(Icons.star, color: Colors.black, size: 16),
                               ],
                             ),
-                            const Text('1.2k Ratings', style: TextStyle(color: Colors.black54, fontSize: 10)),
+                            Text('${restaurant.totalReviews ?? 0} Ratings', style: const TextStyle(color: Colors.black54, fontSize: 10)),
                           ],
                         ),
                       ),
@@ -181,7 +212,7 @@ class RestaurantDetailScreen extends StatelessWidget {
                       children: [
                         _buildInfoColumn(Icons.location_on, restaurant.distance, 'Distance', goldColor),
                         _buildDivider(),
-                        _buildInfoColumn(Icons.schedule, '24/7', 'Timings', goldColor),
+                        _buildInfoColumn(Icons.schedule, restaurant.timings ?? '24/7', 'Timings', goldColor),
                         _buildDivider(),
                         _buildInfoColumn(Icons.table_restaurant, 'Available', 'Dine-In', goldColor),
                       ],
@@ -194,7 +225,34 @@ class RestaurantDetailScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: () {},
+                          onPressed: () {
+                            final mapTarget = PujaDetailModel(
+                              id: restaurant.id,
+                              name: restaurant.name,
+                              area: restaurant.area,
+                              rating: restaurant.rating,
+                              distance: restaurant.distance,
+                              latitude: restaurant.latitude,
+                              longitude: restaurant.longitude,
+                              historySummary: '',
+                              theme2026: '',
+                              idolArtist: '',
+                              pandalDesigner: '',
+                              imageUrl: restaurant.imageUrl,
+                              totalPhotos: 0,
+                              crowdStatus: 'Moderate',
+                              queueTimeMins: 0,
+                              amenities: [],
+                              nearestMetro: '',
+                              nearestBusStop: '',
+                              nearestCafe: '',
+                              nearestHospital: '',
+                              payAndUseToilet: '',
+                              rainStatus: 'Clear',
+                            );
+                            ref.read(navigationTargetProvider.notifier).state = mapTarget;
+                            context.go('/map');
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: goldColor,
                             foregroundColor: Colors.black,
@@ -205,49 +263,65 @@ class RestaurantDetailScreen extends StatelessWidget {
                           label: const Text('Get Directions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {},
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: goldColor,
-                            side: BorderSide(color: goldColor),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      if (restaurant.contactPhone != null && restaurant.contactPhone!.isNotEmpty) ...[
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              final url = Uri.parse('tel:\${restaurant.contactPhone}');
+                              if (await canLaunchUrl(url)) {
+                                await launchUrl(url);
+                              }
+                            },
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: goldColor,
+                              side: BorderSide(color: goldColor),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            icon: const Icon(Icons.call, size: 20),
+                            label: const Text('Call Now', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           ),
-                          icon: const Icon(Icons.call, size: 20),
-                          label: const Text('Call Now', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 32),
                   
                   // About Section
-                  const Text('About', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Located right in the heart of the city, this spot is a favorite for pandal hoppers looking to grab a quick, delicious bite. Known for its rich flavors and vibrant atmosphere.',
-                    style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.5),
-                  ),
-                  const SizedBox(height: 32),
+                  if (restaurant.about != null && restaurant.about!.isNotEmpty) ...[
+                    const Text('About', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    Text(
+                      restaurant.about!,
+                      style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.5),
+                    ),
+                    const SizedBox(height: 32),
+                  ],
                   
                   // Top Menu Items
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Top Dishes', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                      Text('Full Menu', style: TextStyle(color: goldColor, fontSize: 14, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Menu List
-                  _buildMenuItem('Signature Biryani', 'Mutton, aromatic spices, potato', '₹350', goldColor),
-                  _buildMenuItem('Chilli Chicken', 'Spicy, tossed in soy and garlic', '₹280', goldColor),
-                  _buildMenuItem('Fish Fry', 'Kolkata style, served with kasundi', '₹200', goldColor),
-                  
-                  const SizedBox(height: 40),
+                  if (restaurant.topDishes != null && restaurant.topDishes!.isNotEmpty) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Top Dishes', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                        Text('Full Menu', style: TextStyle(color: goldColor, fontSize: 14, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Menu List
+                    ...restaurant.topDishes!.map((dish) => 
+                      _buildMenuItem(
+                        dish['name'] ?? 'Dish', 
+                        dish['description'] ?? '', 
+                        "₹\${dish['price'] ?? 0}", 
+                        goldColor
+                      )
+                    ).toList(),
+                    
+                    const SizedBox(height: 40),
+                  ],
                 ],
               ),
             ),

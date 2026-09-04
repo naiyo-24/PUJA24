@@ -53,7 +53,7 @@ class PujaRepository {
   /// Fetches Puja details using GraphQL.
   Future<PujaDetailModel> getPujaDetails(String id) async {
     const String query = '''
-      query GetPlaceDetails(\$id: UUID!) {
+      query GetPlaceDetails(\$id: String!) {
         placeDetails(placeId: \$id) {
           id
           name
@@ -83,7 +83,7 @@ class PujaRepository {
   /// Toggles the saved status of a Pandal
   Future<bool> toggleSavedPandal(String placeId) async {
     const String mutation = '''
-      mutation ToggleSavedPlace(\$placeId: UUID!) {
+      mutation ToggleSavedPlace(\$placeId: String!) {
         toggleSavedPlace(placeId: \$placeId) {
           status
         }
@@ -105,7 +105,7 @@ class PujaRepository {
   Future<bool> submitLiveUpdate(String placeId, String rainStatus, String crowdStatus) async {
     // TODO: Replace with the actual GraphQL mutation when the backend is ready
     const String mutation = '''
-      mutation SubmitLiveUpdate(\$placeId: UUID!, \$rainStatus: String!, \$crowdStatus: String!) {
+      mutation SubmitLiveUpdate(\$placeId: String!, \$rainStatus: String!, \$crowdStatus: String!) {
         submitLiveUpdate(placeId: \$placeId, rainStatus: \$rainStatus, crowdStatus: \$crowdStatus) {
           success
         }

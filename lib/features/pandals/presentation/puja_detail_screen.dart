@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import 'widgets/puja_basic_info.dart';
 import 'widgets/puja_theme_section.dart';
-import 'widgets/puja_live_status.dart';
 import 'widgets/puja_facilities.dart';
 import 'widgets/puja_transit.dart';
 import 'widgets/puja_nearby_places.dart';
@@ -15,6 +14,8 @@ import '../domain/models/puja_detail_model.dart';
 import 'widgets/puja_detail_skeleton.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:go_router/go_router.dart';
+import 'puja_map_screen.dart';
 
 class PujaDetailScreen extends ConsumerStatefulWidget {
   final String id;
@@ -42,8 +43,6 @@ class _PujaDetailScreenState extends ConsumerState<PujaDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   PujaBasicInfo(puja: puja),
-                  _buildDivider(),
-                  PujaLiveStatus(puja: puja),
                   _buildDivider(),
                   PujaThemeSection(puja: puja),
                   _buildDivider(),
@@ -183,16 +182,14 @@ class _PujaDetailScreenState extends ConsumerState<PujaDetailScreen> {
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: () async {
+                onPressed: () {
                   if (puja.latitude == 0.0 && puja.longitude == 0.0) return;
-                  final url = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=${puja.latitude},${puja.longitude}');
-                  if (await canLaunchUrl(url)) {
-                    await launchUrl(url, mode: LaunchMode.externalApplication);
-                  } else {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open maps')));
-                    }
-                  }
+                  
+                  // Request the map screen to navigate to this puja
+                  ref.read(navigationTargetProvider.notifier).state = puja;
+                  
+                  // Go to the map tab
+                  context.go('/map');
                 },
                 icon: const Icon(Icons.directions),
                 label: const Text('Directions'),

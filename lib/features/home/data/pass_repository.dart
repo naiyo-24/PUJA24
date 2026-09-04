@@ -11,8 +11,8 @@ final passRepositoryProvider = Provider<PassRepository>((ref) {
 class PassRepository {
   final Dio _dio = Dio(BaseOptions(
     baseUrl: ApiConfig.baseUrl,
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
+    connectTimeout: const Duration(seconds: 30),
+    receiveTimeout: const Duration(seconds: 30),
   ));
 
   PassRepository();
@@ -71,6 +71,24 @@ class PassRepository {
       throw Exception('Failed to create order');
     } catch (e) {
       throw Exception('Payment error: $e');
+    }
+  }
+
+  Future<bool> verifyPayment(String paymentId, String orderId, String signature, String token) async {
+    try {
+      final response = await _dio.post(
+        '/payments/verify',
+        data: {
+          'razorpay_payment_id': paymentId,
+          'razorpay_order_id': orderId,
+          'razorpay_signature': signature,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Payment verification error: $e');
+      return false;
     }
   }
 }

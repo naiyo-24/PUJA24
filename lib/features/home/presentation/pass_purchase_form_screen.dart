@@ -31,6 +31,14 @@ class _PassPurchaseFormScreenState extends ConsumerState<PassPurchaseFormScreen>
     _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
     _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+    
+    // Auto-fill user details
+    final authState = ref.read(authProvider);
+    if (authState is Authenticated) {
+      _nameController.text = authState.user.fullName;
+      _emailController.text = authState.user.email;
+      _phoneController.text = authState.user.phoneNumber ?? '';
+    }
   }
 
   @override
@@ -42,9 +50,24 @@ class _PassPurchaseFormScreenState extends ConsumerState<PassPurchaseFormScreen>
     super.dispose();
   }
 
-  void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    setState(() => _isProcessing = false);
-    context.go('/payment-success', extra: response.orderId ?? response.paymentId ?? 'TXN_SUCCESS');
+  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    final authState = ref.read(authProvider);
+    final token = (authState is Authenticated) ? authState.token : null;
+    
+    if (token != null && response.paymentId != null && response.orderId != null && response.signature != null) {
+      final passRepo = ref.read(passRepositoryProvider);
+      final verified = await passRepo.verifyPayment(response.paymentId!, response.orderId!, response.signature!, token);
+      
+      setState(() => _isProcessing = false);
+      if (verified) {
+        context.go('/payment-success', extra: response.orderId ?? response.paymentId ?? 'TXN_SUCCESS');
+      } else {
+        _showResultDialog('Verification Failed', 'Payment was successful but could not be verified on the server. Please contact support.', false);
+      }
+    } else {
+      setState(() => _isProcessing = false);
+      context.go('/payment-success', extra: response.orderId ?? response.paymentId ?? 'TXN_SUCCESS');
+    }
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
@@ -128,6 +151,18 @@ class _PassPurchaseFormScreenState extends ConsumerState<PassPurchaseFormScreen>
   Widget build(BuildContext context) {
     const bgColor = Color(0xFF090909);
     const goldColor = Color(0xFFD4A24C);
+    
+    final passesState = ref.watch(availablePassesProvider);
+    double price = 500;
+    int capacity = 3;
+    
+    if (passesState.hasValue) {
+      final pass = passesState.value?.firstWhere((p) => p.id == widget.packageId, orElse: () => passesState.value!.first);
+      if (pass != null) {
+        price = pass.price;
+        capacity = pass.personCapacity;
+      }
+    }
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -155,7 +190,7 @@ class _PassPurchaseFormScreenState extends ConsumerState<PassPurchaseFormScreen>
               ),
               const SizedBox(height: 8),
               Text(
-                'Provide your details to receive your digital VIP pass. The pass costs ₹500 and grants 3 people entry.',
+                'Provide your details to receive your digital VIP pass. The pass costs ₹${price.toStringAsFixed(0)} and grants $capacity people entry.',
                 style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 16),
               ),
               const SizedBox(height: 32),
@@ -198,12 +233,12 @@ class _PassPurchaseFormScreenState extends ConsumerState<PassPurchaseFormScreen>
                   ),
                   child: _isProcessing 
                     ? const CircularProgressIndicator(color: Colors.black)
-                    : const Row(
+                    : Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.payment, size: 24),
-                          SizedBox(width: 8),
-                          Text('Pay ₹500', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          const Icon(Icons.payment, size: 24),
+                          const SizedBox(width: 8),
+                          Text('Pay ₹${price.toStringAsFixed(0)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         ],
                       ),
                 ),

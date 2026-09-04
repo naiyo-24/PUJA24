@@ -100,22 +100,21 @@ class PujaPassDetailsScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                SizedBox(
-                  height: 140,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    children: [
-                      _buildPandalCard('Bosepukur Sitala Mandir', 'assets/images/ad1.png'),
-                      const SizedBox(width: 16),
-                      _buildPandalCard('Maddox Square', 'assets/images/ad2.png'),
-                      const SizedBox(width: 16),
-                      _buildPandalCard('Suruchi Sangha', 'assets/images/ad1.png'),
-                      const SizedBox(width: 16),
-                      _buildPandalCard('Sreebhumi', 'assets/images/ad2.png'),
-                    ],
-                  ),
-                ),
+                _buildRegionSection('West Kolkata & Behala', [
+                  'Barisha Club', 'S B Park Sarbojanin', 'Behala Nutan Dal', 'Behala Friends', 'Behala Club'
+                ]),
+                _buildRegionSection('North Kolkata', [
+                  'Kidderpore 25 Pally Club', 'Dum Dum Park Bharat Chakra', 'Dum Dum Park Tarun Dal', 'Dum Dum Park Tarun Sangha', 'Ahiritola Sarbojanin', 'Ahiritola Yubak Brinda', 'Jagat Mukherjee Park', 'Chorebagan Sarbojanin', 'Chaltabagan Sarbajanin', 'Sikdar Bagan', 'Tala Barowari', 'Mitali Sangha Kankurgachi', 'Prafulla Kanan Paschim Adhibasi Brinda', 'Aswininagar Bandhu Mahal', 'Hatibagan Sarbojanin', 'Hatibagan Nabin Pally', 'Kashi Bose Lane', 'Nalin Sarkar Street'
+                ]),
+                _buildRegionSection('Central Kolkata', [
+                  'Beliaghata 33 Palli', 'Santosh Mitra Square'
+                ]),
+                _buildRegionSection('Salt Lake & Rajarhat', [
+                  'New Town Sarbojanin', 'AK Block Salt Lake'
+                ]),
+                _buildRegionSection('South Kolkata', [
+                  'Ajeya Sanghati', 'Vivekananda Park Athletic Club', '41 Pally Club', 'Badam Tala Ashar Sangha', 'Pratapaditya Road – Tricon Park', 'Alipur Sarbojanin', 'Bakul Bagan Sarbojanin', 'Chakraberia Sarbojanin', 'Abasar', 'Netaji Jatiyo Seva Dal', 'Kendua Shanti Sangha', 'Purbachal Shakti Sangha', 'Santoshpur Lake Pally', 'Santoshpur Trikon Park', '95 Pally', 'Hindusthan Park Sarbojanin', 'Rajdanga Naba Uday Sangha', 'Bosepukur Sitala Mandir'
+                ]),
                 
                 const SizedBox(height: 48),
                 
@@ -192,48 +191,27 @@ class PujaPassDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPandalCard(String name, String imagePath) {
-    return Container(
-      width: 120,
-      decoration: BoxDecoration(
-        color: const Color(0xFF141414),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFD4A24C).withOpacity(0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            flex: 2,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-              child: Image.asset(
-                imagePath,
-                fit: BoxFit.cover,
-              ),
+  Widget _buildRegionSection(String region, List<String> pandals) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(region, style: const TextStyle(color: Color(0xFFD4A24C), fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: pandals.map((p) => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF141414),
+              border: Border.all(color: const Color(0xFFD4A24C).withOpacity(0.3)),
+              borderRadius: BorderRadius.circular(12),
             ),
-          ),
-          Expanded(
-            flex: 1,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-              child: Center(
-                child: Text(
-                  name,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+            child: Text(p, style: const TextStyle(color: Colors.white, fontSize: 13)),
+          )).toList(),
+        ),
+        const SizedBox(height: 24),
+      ],
     );
   }
 }

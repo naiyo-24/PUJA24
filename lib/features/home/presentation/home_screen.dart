@@ -1,4 +1,4 @@
-import 'package:latlong2/latlong.dart';
+import 'package:latlong2/latlong.dart' as ll;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,12 +8,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:play_install_referrer/play_install_referrer.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../pandals/presentation/providers/puja_list_provider.dart';
 import '../../pandals/presentation/widgets/pandal_card_skeleton.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
+import '../presentation/providers/home_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -24,7 +27,10 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   String _currentLocationName = 'Kolkata';
+  Position? _currentPosition;
   static bool _hasShownWelcomeModal = false;
+  bool _isNavigating = false;
+  bool _isPickerOpen = false;
 
   @override
   void initState() {
@@ -33,8 +39,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _checkInstallReferrer();
     if (!_hasShownWelcomeModal) {
       _hasShownWelcomeModal = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showWelcomeModal(context);
+      Future.delayed(Duration.zero, () {
+        if (mounted) _showWelcomeModal(context);
       });
     }
   }
@@ -51,7 +57,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         final pujaId = uri.queryParameters['puja_id'];
         if (pujaId != null && mounted) {
           await prefs.setBool('has_handled_referral', true);
-          context.push('/puja_detail/\$pujaId');
+          Future.delayed(Duration.zero, () {
+            if (mounted) {
+              context.push('/puja_detail/$pujaId');
+            }
+          });
         }
       }
     } catch (e) {
@@ -79,6 +89,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         final place = placemarks.first;
         if (mounted) {
           setState(() {
+            _currentPosition = position;
             _currentLocationName = place.locality ?? place.subLocality ?? place.name ?? 'Custom Location';
           });
         }
@@ -128,82 +139,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Future<bool> _showExitDialog(BuildContext context) async {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
-    final shouldExit = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: isDark ? AppColors.charcoal : AppColors.pureWhite,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            const Icon(Icons.exit_to_app, color: AppColors.pujaRed),
-            const SizedBox(width: 8),
-            Text(
-              'Exit App',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: isDark ? AppColors.pureWhite : AppColors.deepMaroon,
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          'Are you sure you want to exit PUJA24?',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: isDark ? AppColors.ivory : AppColors.textSecondary,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Text(
-              'No',
-              style: TextStyle(
-                color: isDark ? AppColors.pureWhite : AppColors.charcoal,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.pujaRed,
-              foregroundColor: AppColors.pureWhite,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('Yes, Exit', style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-    
-    return shouldExit ?? false;
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) async {
-        if (didPop) return;
-        final shouldExit = await _showExitDialog(context);
-        if (shouldExit) {
-          SystemNavigator.pop();
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: isDark ? AppColors.deepMaroon : AppColors.ivory,
         body: SafeArea(
         bottom: false,
@@ -220,54 +163,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      GestureDetector(
-                        onTap: () async {
-                          final result = await context.push<LatLng>('/map_picker');
-                          if (result != null) {
-                            setState(() {
-                              _currentLocationName = 'Locating...';
-                            });
-                            try {
-                              final Geocoding geocoding = Geocoding();
-                              List<Placemark> placemarks = await geocoding.placemarkFromCoordinates(result.latitude, result.longitude);
-                              if (placemarks.isNotEmpty) {
-                                final place = placemarks.first;
-                                setState(() {
-                                  _currentLocationName = place.locality ?? place.subLocality ?? place.name ?? 'Custom Location';
-                                });
-                              } else {
-                                setState(() {
-                                  _currentLocationName = 'Custom Location';
-                                });
-                              }
-                            } catch (e) {
-                              setState(() {
-                                _currentLocationName = 'Custom Location';
-                              });
-                            }
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isDark ? AppColors.charcoal : AppColors.pureWhite,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
-                              const SizedBox(width: 4),
-                              Text(
-                                _currentLocationName,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: isDark ? AppColors.pureWhite : AppColors.charcoal,
-                                ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.charcoal : AppColors.pureWhite,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
+                            const SizedBox(width: 4),
+                            Text(
+                              _currentLocationName,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
                               ),
-                              const SizedBox(width: 4),
-                              const Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textSecondary),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                       
@@ -395,101 +308,116 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Hero Banner
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.antiqueGold.withOpacity(0.5), width: 1),
-                  image: const DecorationImage(
-                    image: AssetImage('assets/images/ad1.png'),
-                    fit: BoxFit.cover,
-                    alignment: Alignment.centerRight,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              // Dynamic Banners
+              ref.watch(bannersProvider).when(
+                data: (banners) {
+                  final heroBanners = banners.where((b) => b.bannerType == 'HERO' || b.bannerType == 'PROMO').toList();
+                  if (heroBanners.isEmpty) return const SizedBox.shrink();
+                  
+                  final banner = heroBanners.first;
+                  
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.antiqueGold.withOpacity(0.5), width: 1),
+                      image: DecorationImage(
+                        image: CachedNetworkImageProvider(banner.imageUrl),
+                        fit: BoxFit.cover,
+                        alignment: Alignment.centerRight,
+                        colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.4), BlendMode.darken),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          width: 4,
-                          height: 4,
-                          decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                        ),
-                        const SizedBox(width: 4),
-                        Container(width: 20, height: 1, color: Colors.red),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Joy Maa Durga!',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: AppColors.antiqueGold,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Celebrate Puja\nLike Never Before',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        color: AppColors.pureWhite,
-                        fontWeight: FontWeight.bold,
-                        height: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.5,
-                      child: Text(
-                        'Explore pandals, plan your route,\nfind the best food & more.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.ivory.withOpacity(0.9),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF3C77C), // Matching the gold in the image
-                        foregroundColor: AppColors.deepMaroon,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                        padding: const EdgeInsets.only(left: 16, right: 8, top: 8, bottom: 8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('Explore Now', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: AppColors.deepMaroon,
-                              shape: BoxShape.circle,
+                        Row(
+                          children: [
+                            Container(
+                              width: 4,
+                              height: 4,
+                              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                             ),
-                            child: const Icon(Icons.arrow_forward_ios, size: 10, color: Colors.white),
+                            const SizedBox(width: 4),
+                            Container(width: 20, height: 1, color: Colors.red),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          banner.subtitle ?? 'Special Offer',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.antiqueGold,
+                            fontWeight: FontWeight.bold,
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Dots indicator
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(width: 6, height: 6, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
-                        const SizedBox(width: 4),
-                        Container(width: 6, height: 6, decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), shape: BoxShape.circle)),
-                        const SizedBox(width: 4),
-                        Container(width: 6, height: 6, decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), shape: BoxShape.circle)),
-                        const SizedBox(width: 4),
-                        Container(width: 6, height: 6, decoration: BoxDecoration(color: Colors.white.withOpacity(0.5), shape: BoxShape.circle)),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          banner.title,
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            color: AppColors.pureWhite,
+                            fontWeight: FontWeight.bold,
+                            height: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            if (banner.actionType == 'NAVIGATE' && banner.actionPayload != null) {
+                              context.push(banner.actionPayload!);
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFF3C77C),
+                            foregroundColor: AppColors.deepMaroon,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                            padding: const EdgeInsets.only(left: 16, right: 8, top: 8, bottom: 8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('Explore Now', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: AppColors.deepMaroon,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.arrow_forward_ios, size: 10, color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        if (heroBanners.length > 1)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(heroBanners.length, (index) {
+                              return Container(
+                                width: 6,
+                                height: 6,
+                                margin: const EdgeInsets.symmetric(horizontal: 2),
+                                decoration: BoxDecoration(
+                                  color: index == 0 ? Colors.red : Colors.white.withOpacity(0.5),
+                                  shape: BoxShape.circle,
+                                ),
+                              );
+                            }),
+                          )
                       ],
-                    )
-                  ],
+                    ),
+                  );
+                },
+                loading: () => Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.charcoal : Colors.grey[200],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Center(child: CircularProgressIndicator()),
                 ),
+                error: (err, stack) => const SizedBox.shrink(),
               ),
               const SizedBox(height: 24),
 
@@ -532,59 +460,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Map Preview
-              Text('Puja Around You', style: theme.textTheme.titleLarge),
-              const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: SizedBox(
-                  height: 200,
-                  width: double.infinity,
-                  child: Stack(
-                    children: [
-                      Container(
-                        color: Colors.grey.withOpacity(0.2),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.map_outlined, size: 64, color: AppColors.textSecondary.withOpacity(0.5)),
-                              const SizedBox(height: 8),
-                            ],
-                          ),
-                        ),
-                      ),
-                      // Gradient overlay for better button visibility
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.white.withOpacity(0.0), Colors.white.withOpacity(0.4)],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                          ),
-                        ),
-                      ),
-                      Center(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            // TODO: Navigate to full map screen
-                          },
-                          icon: const Icon(Icons.map, color: Colors.white),
-                          label: const Text('View All on Map', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.pujaRed,
-                            elevation: 8,
-                            shadowColor: AppColors.pujaRed.withOpacity(0.5),
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
               // Quick Actions
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -604,85 +479,90 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 24),
 
               // Upcoming Event
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFF3C77C), width: 1), // Gold border
-                  image: const DecorationImage(
-                    image: AssetImage('assets/images/ad2.png'),
-                    fit: BoxFit.fill, // Stretches the image so left and right art is fully visible
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 110, top: 16, bottom: 16, right: 16), // Padding to avoid the man on the left
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Upcoming Event',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: const Color(0xFFF3C77C),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Cultural Program at Maddox Square',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: AppColors.pureWhite,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
+              ref.watch(bannersProvider).when(
+                data: (banners) {
+                  final eventBanners = banners.where((b) => b.bannerType == 'EVENT').toList();
+                  if (eventBanners.isEmpty) return const SizedBox.shrink();
+                  
+                  final eventBanner = eventBanners.first;
+                  
+                  return Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFF3C77C), width: 1),
+                      image: DecorationImage(
+                        image: CachedNetworkImageProvider(eventBanner.imageUrl),
+                        fit: BoxFit.cover,
+                        colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.6), BlendMode.darken),
+                      ),
+                    ),
+                    child: Stack(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(Icons.calendar_month, size: 14, color: AppColors.ivory),
-                              const SizedBox(width: 4),
                               Text(
-                                '10 Oct, 8:00 PM Onwards',
-                                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.ivory),
+                                eventBanner.subtitle ?? 'Upcoming Event',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: const Color(0xFFF3C77C),
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
+                              const SizedBox(height: 4),
+                              Text(
+                                eventBanner.title,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  color: AppColors.pureWhite,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
                             ],
                           ),
-                          const SizedBox(height: 12),
-                        ],
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 12,
-                      right: 12,
-                      child: ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF3C77C), // Gold button
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text('View Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                            SizedBox(width: 4),
-                            Icon(Icons.arrow_forward_ios, size: 10),
-                          ],
+                        Positioned(
+                          bottom: 12,
+                          right: 12,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (eventBanner.actionType == 'NAVIGATE' && eventBanner.actionPayload != null) {
+                                context.push(eventBanner.actionPayload!);
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFF3C77C),
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('View Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                SizedBox(width: 4),
+                                Icon(Icons.arrow_forward_ios, size: 10),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (err, stack) => const SizedBox.shrink(),
               ),
               const SizedBox(height: 100), // Padding to allow scrolling past the floating navbar
             ],
           ),
         ),
       ),
-    ));
+    );
   }
 }
 
