@@ -246,6 +246,16 @@ class GroupWebsocketService {
                    _triggerRouteFetch();
                 }
               }
+            } else if (data['type'] == 'stop_location' && _userId != null) {
+              final uId = data['user_id'].toString();
+              if (_liveLocations.containsKey(uId)) {
+                _liveLocations.remove(uId);
+                _locationController.add(Map.from(_liveLocations));
+                
+                if (targetUserId == uId) {
+                  cancelRoute();
+                }
+              }
             }
           } catch (e) {
             print('Error parsing websocket message: $e');
@@ -418,9 +428,16 @@ class GroupWebsocketService {
     if (_userId != null) {
       _liveLocations.remove(_userId!);
       _locationController.add(Map.from(_liveLocations));
+      
+      // Tell others we stopped
+      if (_channel != null) {
+        final message = {
+          'type': 'stop_location',
+          'user_id': _userId,
+        };
+        _channel!.sink.add(jsonEncode(message));
+      }
     }
-    
-    // Optional: send a 'stop_location' event to backend so others know we stopped
   }
 
   void setRouteTarget(String uId, String userName) {
