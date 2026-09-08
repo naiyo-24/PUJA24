@@ -57,6 +57,7 @@ class PujaRepository {
         placeDetails(placeId: \$id) {
           id
           name
+          type
           area
           rating
           distance
@@ -83,7 +84,7 @@ class PujaRepository {
   /// Toggles the saved status of a Pandal
   Future<bool> toggleSavedPandal(String placeId) async {
     const String mutation = '''
-      mutation ToggleSavedPlace(\$placeId: String!) {
+      mutation ToggleSavedPlace(\$placeId: UUID!) {
         toggleSavedPlace(placeId: \$placeId) {
           status
         }

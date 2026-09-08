@@ -11,6 +11,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart';
 import 'widgets/map_location_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../pandals/presentation/providers/save_pandal_provider.dart';
+import '../../pandals/presentation/providers/plan_pandal_provider.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -180,6 +182,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         Expanded(
                           child: DropdownButtonFormField<String>(
                             value: selectedSex,
+                            isExpanded: true,
                             decoration: InputDecoration(
                               labelText: 'Sex',
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -299,7 +302,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               'Version 1.0.0',
               style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
             ),
-            const SizedBox(height: 104), // Padding to clear bottom nav bar
+            const SizedBox(height: 140), // Increased padding to fully clear custom bottom nav bar
           ],
         ),
       ),
@@ -426,11 +429,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildStatItem(theme, '12', 'Saved'),
+            _buildStatItem(theme, ref.watch(savedPandalIdsProvider).length.toString(), 'Saved'),
             Container(width: 1, height: 40, color: Colors.grey.withOpacity(0.3)),
-            _buildStatItem(theme, '3', 'Routes'),
+            _buildStatItem(theme, ref.watch(planPandalIdsProvider).length.toString(), 'Routes'),
             Container(width: 1, height: 40, color: Colors.grey.withOpacity(0.3)),
-            _buildStatItem(theme, '8', 'Reviews'),
+            _buildStatItem(theme, '0', 'Reviews'),
           ],
         ),
       ),

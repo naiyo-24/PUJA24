@@ -130,7 +130,75 @@ class PlacesApiService {
     }
   }
 
-  // 4. Find Nearby Toilets
+  // 4. Find Nearby Parking
+  Future<List<Map<String, dynamic>>> getNearbyParking(double lat, double lng) async {
+    List<Map<String, dynamic>> allParking = [];
+    String? nextPageToken;
+
+    try {
+      do {
+        final queryParams = <String, dynamic>{
+          'key': _apiKey,
+        };
+
+        if (nextPageToken == null) {
+          queryParams['location'] = '\$lat,\$lng';
+          queryParams['radius'] = '15000'; // 15km radius
+          queryParams['keyword'] = 'parking';
+        } else {
+          queryParams['pagetoken'] = nextPageToken;
+          await Future.delayed(const Duration(seconds: 2));
+        }
+
+        final response = await _dio.get(
+          '\$_baseUrl/nearbysearch/json',
+          queryParameters: queryParams,
+        );
+
+        if (response.data['status'] == 'OK') {
+          final results = response.data['results'] as List;
+          allParking.addAll(results.map((r) {
+            final loc = r['geometry']['location'];
+            return {
+              'name': r['name'],
+              'lat': loc['lat'],
+              'lng': loc['lng'],
+              'place_id': r['place_id'],
+            };
+          }).toList());
+          
+          nextPageToken = response.data['next_page_token'];
+        } else if (response.data['status'] == 'INVALID_REQUEST' && nextPageToken != null) {
+           await Future.delayed(const Duration(seconds: 2));
+           final retryResponse = await _dio.get('\$_baseUrl/nearbysearch/json', queryParameters: queryParams);
+           if (retryResponse.data['status'] == 'OK') {
+             final results = retryResponse.data['results'] as List;
+             allParking.addAll(results.map((r) {
+               final loc = r['geometry']['location'];
+               return {
+                 'name': r['name'],
+                 'lat': loc['lat'],
+                 'lng': loc['lng'],
+                 'place_id': r['place_id'],
+               };
+             }).toList());
+             nextPageToken = retryResponse.data['next_page_token'];
+           } else {
+             nextPageToken = null;
+           }
+        } else {
+          nextPageToken = null;
+        }
+      } while (nextPageToken != null && allParking.length < 60);
+
+      return allParking;
+    } catch (e) {
+      print('Places API Nearby Search Error: \$e');
+      return allParking;
+    }
+  }
+
+  // 5. Find Nearby Toilets
   Future<List<Map<String, dynamic>>> getNearbyToilets(double lat, double lng) async {
     List<Map<String, dynamic>> allToilets = [];
     String? nextPageToken;

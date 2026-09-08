@@ -167,6 +167,10 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
                           text: 'Saved',
                         ),
                         GButton(
+                          icon: Icons.groups_outlined,
+                          text: 'Groups',
+                        ),
+                        GButton(
                           icon: Icons.person_outline,
                           text: 'Profile',
                         ),

@@ -119,30 +119,47 @@ class PujaPassDetailsScreen extends ConsumerWidget {
                 const SizedBox(height: 48),
                 
                 // Action Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      context.push('/pass-purchase', extra: package.id);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: goldColor,
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                Consumer(
+                  builder: (context, ref, child) {
+                    final myVouchersState = ref.watch(myVouchersProvider);
+                    final hasPurchased = myVouchersState.maybeWhen(
+                      data: (vouchers) => vouchers.any((v) => v.packageId == package.id),
+                      orElse: () => false,
+                    );
+
+                    return SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: hasPurchased 
+                          ? null 
+                          : () {
+                              context.push('/pass-purchase', extra: package.id);
+                            },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: hasPurchased ? Colors.grey.shade800 : goldColor,
+                          foregroundColor: hasPurchased ? Colors.white54 : Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                          disabledBackgroundColor: Colors.grey.shade800,
+                          disabledForegroundColor: Colors.white54,
+                        ),
+                        child: Text(
+                          hasPurchased 
+                            ? 'Already Purchased'
+                            : 'Buy Pass Now (₹${package.price.toStringAsFixed(0)})',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      'Buy Pass Now (₹${package.price.toStringAsFixed(0)})',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                    );
+                  }
                 ),
+                const SizedBox(height: 64), // Ensure the button fully clears the bottom of the screen
               ],
             ),
           );

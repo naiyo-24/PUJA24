@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/network/api_config.dart';
 import '../../pandals/domain/models/puja_detail_model.dart';
 import '../../pandals/presentation/puja_map_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -89,16 +90,26 @@ class RestaurantDetailScreen extends ConsumerWidget {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  restaurant.imageUrl.startsWith('http')
-                    ? CachedNetworkImage(
-                        imageUrl: restaurant.imageUrl,
+                  Builder(builder: (context) {
+                    final imageUrl = restaurant.imageUrl;
+                    if (imageUrl.isEmpty) {
+                      return Image.asset('assets/images/cafe.png', fit: BoxFit.cover);
+                    } else if (imageUrl.startsWith('http')) {
+                      return CachedNetworkImage(
+                        imageUrl: imageUrl,
                         fit: BoxFit.cover,
                         errorWidget: (context, url, error) => Image.asset('assets/images/cafe.png', fit: BoxFit.cover),
-                      )
-                    : Image.asset(
-                        restaurant.imageUrl.isNotEmpty ? restaurant.imageUrl : 'assets/images/cafe.png',
+                      );
+                    } else if (imageUrl.startsWith('/')) {
+                      return CachedNetworkImage(
+                        imageUrl: '\${ApiConfig.baseUrl}\$imageUrl',
                         fit: BoxFit.cover,
-                      ),
+                        errorWidget: (context, url, error) => Image.asset('assets/images/cafe.png', fit: BoxFit.cover),
+                      );
+                    } else {
+                      return Image.asset(imageUrl, fit: BoxFit.cover);
+                    }
+                  }),
                   // Gradient for text readability
                   Container(
                     decoration: BoxDecoration(
@@ -229,6 +240,7 @@ class RestaurantDetailScreen extends ConsumerWidget {
                             final mapTarget = PujaDetailModel(
                               id: restaurant.id,
                               name: restaurant.name,
+                              type: 'restaurant',
                               area: restaurant.area,
                               rating: restaurant.rating,
                               distance: restaurant.distance,
@@ -246,6 +258,7 @@ class RestaurantDetailScreen extends ConsumerWidget {
                               nearestMetro: '',
                               nearestBusStop: '',
                               nearestCafe: '',
+                              nearestParking: '',
                               nearestHospital: '',
                               payAndUseToilet: '',
                               rainStatus: 'Clear',

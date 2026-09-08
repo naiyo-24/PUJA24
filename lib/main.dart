@@ -5,8 +5,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'core/theme/app_theme.dart';
 import 'routes/app_router.dart';
 
+import 'package:flutter/services.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Enable edge-to-edge mode for dynamic navigation bar support
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
   
   await Firebase.initializeApp();
   await dotenv.load(fileName: ".env");

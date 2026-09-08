@@ -51,12 +51,23 @@
 		<true/>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>PUJA24 requires access to your photo library to let you choose a profile picture.</string>
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>PUJA24 requires access to save images like the Puja schedule to your photo library.</string>
 		<key>NSCameraUsageDescription</key>
 		<string>PUJA24 requires access to your camera to let you take a profile picture.</string>
 		<key>NSMicrophoneUsageDescription</key>
 		<string>PUJA24 requires access to your microphone when taking a video.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>PUJA24 requires your location to recommend nearby pandals and help you navigate safely.</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>PUJA24 requires background location tracking so your group can see your live location while pandal hopping.</string>
+		<key>NSLocationAlwaysUsageDescription</key>
+		<string>PUJA24 requires background location tracking so your group can see your live location while pandal hopping.</string>
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>location</string>
+			<string>fetch</string>
+		</array>
 		<key>UILaunchStoryboardName</key>
 		<string>LaunchScreen</string>
 		<key>UIMainStoryboardFile</key>

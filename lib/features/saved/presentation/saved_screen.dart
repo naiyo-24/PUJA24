@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../food/domain/models/restaurant_model.dart';
 import '../../pandals/domain/models/puja_detail_model.dart';
 import 'providers/saved_provider.dart';
 
@@ -127,8 +128,10 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
             data: (allItems) {
               // Apply filter locally
               List<PujaDetailModel> items = allItems;
-              if (activeFilter == 'Cafes') {
-                items = []; // We don't have cafe data yet
+              if (activeFilter == 'Pandals') {
+                items = allItems.where((item) => item.type.toLowerCase() == 'pandal').toList();
+              } else if (activeFilter == 'Cafes') {
+                items = allItems.where((item) => item.type.toLowerCase() == 'restaurant' || item.type.toLowerCase() == 'cafe').toList();
               }
 
               if (items.isEmpty) {
@@ -190,7 +193,31 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
 
   Widget _buildSavedCard(PujaDetailModel item, Color goldColor) {
     return GestureDetector(
-      onTap: () => context.push('/puja_detail/${item.id}'),
+      onTap: () {
+        if (item.type.toLowerCase() == 'restaurant' || item.type.toLowerCase() == 'cafe') {
+          final restaurant = RestaurantModel(
+            id: item.id,
+            name: item.name,
+            cuisine: 'Food & Cafe',
+            rating: item.rating,
+            distance: item.distance,
+            priceRange: '₹₹',
+            imageUrl: item.imageUrl,
+            isPujaSpecial: false,
+            latitude: item.latitude,
+            longitude: item.longitude,
+            area: item.area,
+            contactPhone: '',
+            about: '',
+            topDishes: [],
+            totalReviews: 0,
+            timings: '24/7',
+          );
+          context.push('/restaurant_detail/${item.id}', extra: restaurant);
+        } else {
+          context.push('/puja_detail/${item.id}');
+        }
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(

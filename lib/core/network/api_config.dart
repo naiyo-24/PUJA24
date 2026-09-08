@@ -7,8 +7,8 @@ class ApiConfig {
   /// For production: 'https://api.yourdomain.com'
   
   //static const String baseUrl = 'http://127.0.0.1:8000'; // Change this line
-  static const String baseUrl = 'http://192.168.0.159:8000';
-  //static const String baseUrl = 'http://192.168.0.78:8000';
+  //static const String baseUrl = 'http://192.168.0.159:8000';
+  static const String baseUrl = 'http://192.168.0.78:8000';
   // Add specific endpoint paths below
   static const String loginEndpoint = '$baseUrl/auth/login';
   static const String verifyOtpEndpoint = '$baseUrl/auth/verify-otp';

@@ -3,6 +3,7 @@ import 'dart:convert';
 class PujaDetailModel {
   final String id;
   final String name;
+  final String type;
   final String area;
   final String rating;
   final String distance;
@@ -21,12 +22,14 @@ class PujaDetailModel {
   final String nearestBusStop;
   final String nearestCafe;
   final String nearestHospital;
+  final String nearestParking;
   final String payAndUseToilet;
   final String rainStatus; // e.g. "Clear", "Drizzle", "Raining", "Heavy rain"
 
   PujaDetailModel({
     required this.id,
     required this.name,
+    required this.type,
     required this.area,
     required this.rating,
     required this.distance,
@@ -45,6 +48,7 @@ class PujaDetailModel {
     required this.nearestBusStop,
     required this.nearestCafe,
     required this.nearestHospital,
+    required this.nearestParking,
     required this.payAndUseToilet,
     required this.rainStatus,
   });
@@ -67,6 +71,7 @@ class PujaDetailModel {
     return PujaDetailModel(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
+      type: json['type'] ?? 'pandal',
       area: json['area'] ?? json['zone'] ?? '',
       rating: (json['rating'] ?? json['avgRating'] ?? 0.0).toString(),
       distance: (json['distance'] ?? json['distanceMeters'] ?? 0.0).toString(),
@@ -85,6 +90,7 @@ class PujaDetailModel {
       nearestBusStop: metadata['nearestBusStop'] ?? '',
       nearestCafe: metadata['nearestCafe'] ?? '',
       nearestHospital: metadata['nearestHospital'] ?? '',
+      nearestParking: metadata['nearestParking'] ?? '',
       payAndUseToilet: metadata['payAndUseToilet'] ?? '',
       rainStatus: json['rainStatus'] ?? metadata['rainStatus'] ?? 'Clear',
     );

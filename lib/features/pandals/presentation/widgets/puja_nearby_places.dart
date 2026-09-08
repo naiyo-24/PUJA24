@@ -29,6 +29,8 @@ class PujaNearbyPlaces extends StatelessWidget {
           const SizedBox(height: 12),
           _buildInfoRow(context, Icons.local_hospital, 'Hospital', puja.nearestHospital),
           const SizedBox(height: 12),
+          _buildInfoRow(context, Icons.local_parking, 'Nearest Parking', puja.nearestParking),
+          const SizedBox(height: 12),
           _buildInfoRow(context, Icons.wc, 'Pay & Use Toilet', puja.payAndUseToilet),
         ],
       ),

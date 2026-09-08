@@ -1,4 +1,7 @@
 import 'package:latlong2/latlong.dart' as ll;
+import 'package:share_plus/share_plus.dart';
+import 'package:gal/gal.dart';
+
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -235,28 +238,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              
-              // Search Bar
-              TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search pandal, restaurant, cafe...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: Container(
-                    margin: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                      color: AppColors.pujaRed,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.tune, color: AppColors.pureWhite, size: 20),
-                  ),
-                  filled: true,
-                  fillColor: isDark ? AppColors.charcoal : AppColors.pureWhite,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-              ),
+              // Search Bar removed per user request
               const SizedBox(height: 24),
 
               // Banner
@@ -299,7 +281,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       label: 'Metro',
                       onTap: () => context.push('/metro'),
                     ),
-                    _CategoryItem(icon: Icons.local_parking, label: 'Parking'),
+                    _CategoryItem(
+                      icon: Icons.local_parking, 
+                      label: 'Parking',
+                      onTap: () => context.push('/parking'),
+                    ),
                     _CategoryItem(icon: Icons.wc, label: 'Toilets'),
                     _CategoryItem(icon: Icons.event, label: 'Events'),
                     _CategoryItem(icon: Icons.grid_view, label: 'More'),
@@ -421,29 +407,76 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               const SizedBox(height: 24),
 
+              // Advertisement Banner
+              GestureDetector(
+                onTap: () => context.push('/advertisement'),
+                child: Container(
+                  width: double.infinity,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.pujaRed, AppColors.saffron],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 4)),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 20),
+                      const Icon(Icons.campaign_rounded, size: 48, color: Colors.white),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('Advertise With Us', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                            const SizedBox(height: 4),
+                            Text('Reach millions of Puja hoppers', style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 13)),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: Colors.white),
+                      const SizedBox(width: 20),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
               // Explore Near You
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('Explore Near You', style: theme.textTheme.titleLarge),
-                  Text('View All >', style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.pujaRed, fontWeight: FontWeight.bold)),
+                  TextButton(
+                    onPressed: () => context.go('/puja'),
+                    style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0), tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                    child: Text('View All >', style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.pujaRed, fontWeight: FontWeight.bold)),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
               
-              SizedBox(
-                height: 220,
-                child: ref.watch(popularPujasProvider).when(
-                  data: (pandals) {
+              ref.watch(popularPujasProvider).when(
+                data: (pandals) {
                   return SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: pandals.map((pandal) {
                         return GestureDetector(
                           onTap: () {
                             context.push('/puja_detail/${pandal.id}');
                           },
-                          child: _PandalCard(name: pandal.name, distance: pandal.distance, rating: pandal.rating),
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0), // give room for shadow
+                            child: _PandalCard(name: pandal.name, distance: pandal.distance, rating: pandal.rating),
+                          ),
                         );
                       }).toList(),
                     ),
@@ -457,6 +490,142 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
               ),
+              const SizedBox(height: 24),
+
+              // Timetable (দুর্গাপুজো ২০২৬ নির্ঘণ্ট)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('দুর্গাপুজো ২০২৬ নির্ঘণ্ট', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  IconButton(
+                    icon: const Icon(Icons.file_download_outlined, color: AppColors.antiqueGold),
+                    onPressed: () async {
+                      try {
+                        final byteData = await rootBundle.load('assets/images/SOMOY.png');
+                        final bytes = byteData.buffer.asUint8List();
+                        
+                        final hasAccess = await Gal.hasAccess();
+                        if (!hasAccess) {
+                          await Gal.requestAccess();
+                        }
+                        
+                        await Gal.putImageBytes(bytes, name: 'PUJA26_Somoy');
+                        
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Timetable saved to your gallery!'), backgroundColor: AppColors.successGreen),
+                          );
+                        }
+                      } catch (e) {
+                        debugPrint('Error saving image: \$e');
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Failed to save image to gallery. Please check permissions.'), backgroundColor: AppColors.errorRed),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.antiqueGold, width: 1.5),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(15), // Slightly less than container to fit inside border
+                  child: Image.asset(
+                    'assets/images/SOMOY.png',
+                    width: double.infinity,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Nearby Map
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Puja Around You', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  TextButton(
+                    onPressed: () => context.go('/map'),
+                    style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0), tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                    child: Text('View Full >', style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.pujaRed, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ref.watch(popularPujasProvider).when(
+                data: (pandals) {
+                  Set<Marker> markers = {};
+                  if (pandals.isNotEmpty) {
+                    markers = pandals.map((p) => Marker(
+                      markerId: MarkerId(p.id),
+                      position: LatLng(p.latitude, p.longitude),
+                    )).toSet();
+                  }
+                  
+                  LatLng target = const LatLng(22.5726, 88.3639);
+                  if (pandals.isNotEmpty) {
+                    target = LatLng(pandals.first.latitude, pandals.first.longitude);
+                  }
+
+                  return Container(
+                    height: 220,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.antiqueGold.withOpacity(0.5), width: 1),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(15),
+                      child: Stack(
+                        children: [
+                          GoogleMap(
+                            initialCameraPosition: CameraPosition(
+                              target: target,
+                              zoom: 13,
+                            ),
+                            markers: markers,
+                            zoomControlsEnabled: false,
+                            mapToolbarEnabled: false,
+                            myLocationButtonEnabled: false,
+                            scrollGesturesEnabled: false, 
+                            zoomGesturesEnabled: false,
+                          ),
+                          Positioned.fill(
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  context.go('/map');
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+                loading: () => Container(
+                  height: 220,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.charcoal : Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
+                error: (_, __) => const SizedBox.shrink(),
               ),
               const SizedBox(height: 24),
 

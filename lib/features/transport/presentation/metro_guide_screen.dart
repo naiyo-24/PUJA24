@@ -164,7 +164,53 @@ class _MetroGuideScreenState extends State<MetroGuideScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: (_nearestFromMetro != null && _nearestToMetro != null && !_isLoading) ? () {} : null,
+                      onPressed: (_nearestFromMetro != null && _nearestToMetro != null && !_isLoading) ? () {
+                        MetroLine? fromLineObj;
+                        MetroLine? toLineObj;
+                        for (var line in MetroData.lines) {
+                          if (line.stations.any((s) => s.name == _nearestFromMetro)) fromLineObj = line;
+                          if (line.stations.any((s) => s.name == _nearestToMetro)) toLineObj = line;
+                        }
+                        
+                        final needsInterchange = fromLineObj != null && toLineObj != null && fromLineObj.id != toLineObj.id;
+                        String interchangeStr = '';
+                        if (needsInterchange) {
+                          final pair = [fromLineObj!.id, toLineObj!.id]..sort();
+                          final key = pair.join('_');
+                          switch(key) {
+                            case 'blue_orange': interchangeStr = 'Kavi Subhash (New Garia)'; break;
+                            case 'blue_green_west': interchangeStr = 'Esplanade'; break;
+                            case 'blue_purple': interchangeStr = 'Majerhat (via Surface Transport from Kalighat)'; break;
+                            case 'blue_green_east': interchangeStr = 'Sealdah (via Surface Transport from Central)'; break;
+                            case 'green_east_green_west': interchangeStr = 'Sealdah / Esplanade (via Surface Transport)'; break;
+                            case 'green_east_orange': interchangeStr = 'Salt Lake Sector V (via Surface Transport from Ruby)'; break;
+                            default: interchangeStr = 'the designated interchange'; break;
+                          }
+                        }
+
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Metro Route Details', style: TextStyle(fontWeight: FontWeight.bold)),
+                            content: Text(
+                              '1. Head from your start location to $_nearestFromMetro station.\n\n'
+                              '2. Take the metro from $_nearestFromMetro. ' +
+                              (needsInterchange 
+                                  ? 'You will need to change trains at $interchangeStr to reach $_nearestToMetro station on the ${toLineObj!.name}.\n\n' 
+                                  : 'Ride the train directly to $_nearestToMetro station.\n\n') +
+                              '3. From $_nearestToMetro, proceed to your final destination.',
+                              style: const TextStyle(fontSize: 15, height: 1.5),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Got it!', style: TextStyle(color: AppColors.pujaRed)),
+                              ),
+                            ],
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
+                        );
+                      } : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.pujaRed,
                         foregroundColor: AppColors.pureWhite,

@@ -681,6 +681,7 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
                         final mapTarget = PujaDetailModel(
                           id: r.id,
                           name: r.name,
+                          type: 'restaurant',
                           area: r.area,
                           rating: r.rating,
                           distance: r.distance,
@@ -698,6 +699,7 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
                           nearestMetro: '',
                           nearestBusStop: '',
                           nearestCafe: '',
+                          nearestParking: '',
                           nearestHospital: '',
                           payAndUseToilet: '',
                           rainStatus: 'Clear',
@@ -959,6 +961,7 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
                     final mapTarget = PujaDetailModel(
                       id: r.id,
                       name: r.name,
+                      type: 'restaurant',
                       area: r.area,
                       rating: r.rating,
                       distance: r.distance,
@@ -976,6 +979,7 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
                       nearestMetro: '',
                       nearestBusStop: '',
                       nearestCafe: '',
+                      nearestParking: '',
                       nearestHospital: '',
                       payAndUseToilet: '',
                       rainStatus: 'Clear',

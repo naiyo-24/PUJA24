@@ -57,6 +57,7 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
   List<Map<String, dynamic>> _nearbyMetroStations = [];
   List<Map<String, dynamic>> _nearbyToilets = [];
   List<RestaurantModel> _offlineFood = [];
+  List<Map<String, dynamic>> _nearbyParking = [];
 
   List<RouteStep> _routeSteps = [];
   DateTime? _lastRouteFetchTime;
@@ -350,6 +351,16 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
       } catch (e) {
         if (mounted) setState(() => _isLoadingFilterData = false);
       }
+    } else if (filter == 'Parking' && _userLocation != null && _nearbyParking.isEmpty) {
+        setState(() => _isLoadingFilterData = true);
+        final parkingList = await _placesService.getNearbyParking(
+            _userLocation!.latitude, _userLocation!.longitude);
+        if (mounted) {
+          setState(() {
+              _nearbyParking = parkingList;
+              _isLoadingFilterData = false;
+          });
+        }
     }
   }
 
@@ -435,6 +446,7 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
       final placePuja = PujaDetailModel(
         id: placeId,
         name: description.split(',').first,
+        type: 'custom',
         area: description,
         rating: '0',
         distance: '',
@@ -452,6 +464,7 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
         nearestMetro: '',
         nearestBusStop: '',
         nearestCafe: '',
+        nearestParking: '',
         nearestHospital: '',
         payAndUseToilet: '',
         rainStatus: 'Clear',
@@ -571,6 +584,7 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
                       final placePuja = PujaDetailModel(
                         id: station['place_id'],
                         name: station['name'],
+                        type: 'metro',
                         area: 'Metro Station',
                         rating: '0',
                         distance: '',
@@ -588,6 +602,7 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
                         nearestMetro: '',
                         nearestBusStop: '',
                         nearestCafe: '',
+                        nearestParking: '',
                         nearestHospital: '',
                         payAndUseToilet: '',
                         rainStatus: 'Clear',
@@ -609,6 +624,7 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
                       final placePuja = PujaDetailModel(
                         id: toilet['place_id'],
                         name: toilet['name'],
+                        type: 'toilet',
                         area: 'Public Toilet',
                         rating: '0',
                         distance: '',
@@ -626,6 +642,7 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
                         nearestMetro: '',
                         nearestBusStop: '',
                         nearestCafe: '',
+                        nearestParking: '',
                         nearestHospital: '',
                         payAndUseToilet: '',
                         rainStatus: 'Clear',
@@ -633,6 +650,19 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
                       _showPujaDetails(placePuja);
                     },
                   ));
+                }
+              }
+
+              if (_selectedFilter == 'Parking') {
+                for (var spot in _nearbyParking) {
+                  googleMarkers.add(
+                    Marker(
+                      markerId: MarkerId(spot['place_id']),
+                      position: LatLng(spot['lat'], spot['lng']),
+                      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue), // Blue for Parking
+                      infoWindow: InfoWindow(title: spot['name']),
+                    ),
+                  );
                 }
               }
 
@@ -645,8 +675,9 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
                     infoWindow: InfoWindow(title: food.name, snippet: food.cuisine),
                     onTap: () {
                       final placePuja = PujaDetailModel(
-                        id: 'food_${food.id}',
+                        id: 'food_\${food.id}',
                         name: food.name,
+                        type: 'restaurant',
                         area: food.cuisine,
                         rating: food.rating,
                         distance: '',
@@ -664,6 +695,7 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
                         nearestMetro: '',
                         nearestBusStop: '',
                         nearestCafe: '',
+                        nearestParking: '',
                         nearestHospital: '',
                         payAndUseToilet: '',
                         rainStatus: 'Clear',
@@ -719,6 +751,7 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
                 myLocationButtonEnabled: false,
                 zoomControlsEnabled: false,
                 mapToolbarEnabled: false,
+                padding: const EdgeInsets.only(bottom: 90), // Offset for custom bottom nav bar
                 onTap: (_) => setState(() => _selectedPuja = null),
               );
             },
@@ -1261,6 +1294,7 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
                           _selectedPuja = PujaDetailModel(
                             id: puja.id,
                             name: puja.name,
+                            type: puja.type,
                             area: puja.area,
                             rating: puja.rating,
                             distance: puja.distance,
@@ -1278,6 +1312,7 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
                             nearestMetro: puja.nearestMetro,
                             nearestBusStop: puja.nearestBusStop,
                             nearestCafe: puja.nearestCafe,
+                            nearestParking: puja.nearestParking,
                             nearestHospital: puja.nearestHospital,
                             payAndUseToilet: puja.payAndUseToilet,
                             rainStatus: rain,

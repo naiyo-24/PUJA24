@@ -27,8 +27,16 @@ import '../features/planner/presentation/planner_screen.dart';
 import '../features/saved/presentation/saved_screen.dart';
 import '../features/transport/presentation/metro_guide_screen.dart';
 import '../features/transport/presentation/metro_live_map_screen.dart';
+import '../features/transport/presentation/parking_map_screen.dart';
+import '../features/groups/presentation/groups_dashboard_screen.dart';
+import '../features/groups/presentation/create_group_screen.dart';
+import '../features/groups/presentation/join_group_screen.dart';
+import '../features/groups/presentation/group_details_screen.dart';
+import '../features/groups/presentation/group_info_screen.dart';
+import '../features/groups/presentation/group_live_map_screen.dart';
 import '../shell/app_shell.dart';
 import '../core/theme/app_colors.dart';
+import '../features/advertisement/presentation/advertisement_details_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -132,6 +140,51 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/metro-map',
         builder: (context, state) => const MetroLiveMapScreen(),
       ),
+      GoRoute(
+        path: '/parking',
+        builder: (context, state) => const ParkingMapScreen(),
+      ),
+      GoRoute(
+        path: '/groups/create',
+        name: 'createGroup',
+        builder: (context, state) => const CreateGroupScreen(),
+      ),
+      GoRoute(
+        path: '/groups/join',
+        name: 'joinGroup',
+        builder: (context, state) => const JoinGroupScreen(),
+      ),
+      GoRoute(
+        path: '/groups/details/:id',
+        name: 'groupDetails',
+        builder: (context, state) => GroupDetailsScreen(groupId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/groups/info/:id',
+        name: 'groupInfo',
+        builder: (context, state) => GroupInfoScreen(groupId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/join-group/:link',
+        name: 'joinGroupWithLink',
+        builder: (context, state) {
+          final link = state.pathParameters['link'] ?? '';
+          return JoinGroupScreen(inviteLink: link);
+        },
+      ),
+      GoRoute(
+        path: '/advertisement',
+        name: 'advertisement',
+        builder: (context, state) => const AdvertisementDetailsScreen(),
+      ),
+      GoRoute(
+        path: '/groups/live-map/:id',
+        name: 'groupLiveMap',
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? 'unknown';
+          return GroupLiveMapScreen(groupId: id);
+        },
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return AppShell(navigationShell: navigationShell);
@@ -140,8 +193,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                name: RouteNames.explore,
                 path: '/explore',
+                name: RouteNames.explore,
                 builder: (context, state) => const HomeScreen(),
               ),
             ],
@@ -189,6 +242,23 @@ final routerProvider = Provider<GoRouter>((ref) {
                     context.go('/explore');
                   },
                   child: const SavedScreen(),
+                ),
+              ),
+            ],
+          ),
+
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                name: 'groups',
+                path: '/groups',
+                builder: (context, state) => PopScope(
+                  canPop: false,
+                  onPopInvoked: (didPop) {
+                    if (didPop) return;
+                    context.go('/explore');
+                  },
+                  child: const GroupsDashboardScreen(),
                 ),
               ),
             ],
