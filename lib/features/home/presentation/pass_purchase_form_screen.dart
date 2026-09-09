@@ -60,6 +60,7 @@ class _PassPurchaseFormScreenState extends ConsumerState<PassPurchaseFormScreen>
       
       setState(() => _isProcessing = false);
       if (verified) {
+        ref.invalidate(myVouchersProvider);
         context.go('/payment-success', extra: response.orderId ?? response.paymentId ?? 'TXN_SUCCESS');
       } else {
         _showResultDialog('Verification Failed', 'Payment was successful but could not be verified on the server. Please contact support.', false);

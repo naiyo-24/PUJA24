@@ -218,14 +218,17 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/map',
-                builder: (context, state) => PopScope(
-                  canPop: false,
-                  onPopInvoked: (didPop) {
-                    if (didPop) return;
-                    context.go('/explore');
-                  },
-                  child: const PujaMapScreen(),
-                ),
+                builder: (context, state) {
+                  final filter = state.uri.queryParameters['filter'] ?? 'Pandals';
+                  return PopScope(
+                    canPop: false,
+                    onPopInvoked: (didPop) {
+                      if (didPop) return;
+                      context.go('/explore');
+                    },
+                    child: PujaMapScreen(initialFilter: filter),
+                  );
+                },
               ),
             ],
           ),

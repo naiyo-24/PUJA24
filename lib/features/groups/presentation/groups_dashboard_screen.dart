@@ -123,22 +123,6 @@ class _GroupsDashboardScreenState extends ConsumerState<GroupsDashboardScreen> {
     final bgColor2 = isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF2ECE0);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'My Groups',
-          style: GoogleFonts.playfairDisplay(
-            textStyle: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.5,
-              color: isDark ? Colors.white : Colors.black87,
-            ),
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: false,
-      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -148,8 +132,36 @@ class _GroupsDashboardScreenState extends ConsumerState<GroupsDashboardScreen> {
             stops: const [0.0, 1.0],
           ),
         ),
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 8.0),
+                child: Text(
+                  'My Groups',
+                  style: GoogleFonts.playfairDisplay(
+                    textStyle: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: RefreshIndicator(
+                  color: AppColors.pujaRed,
+                  onRefresh: () async {
+                    ref.invalidate(myGroupsProvider);
+                    try {
+                      await ref.read(myGroupsProvider.future);
+                    } catch (_) {}
+                  },
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8).copyWith(bottom: 120),
@@ -225,6 +237,11 @@ class _GroupsDashboardScreenState extends ConsumerState<GroupsDashboardScreen> {
               ),
             ),
           ],
+        ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       floatingActionButton: Padding(

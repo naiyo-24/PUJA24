@@ -8,7 +8,7 @@ void main() async {
         'location': '22.4578,88.4087', // Approx Rajpur Sonarpur coords
         'radius': '15000',
         'keyword': 'parking',
-        'key': 'AIzaSyBmc97dQWHVQCx6obwgI3Quw2_BCJTeAIg'
+        'key': 'REPLACE_WITH_YOUR_KEY'
       }
     );
     print(response.data['status']);

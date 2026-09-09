@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import 'providers/pass_provider.dart';
+import '../../pandals/presentation/providers/puja_list_provider.dart';
 
 class PujaPassDetailsScreen extends ConsumerWidget {
   const PujaPassDetailsScreen({super.key});
@@ -100,21 +101,28 @@ class PujaPassDetailsScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                _buildRegionSection('West Kolkata & Behala', [
-                  'Barisha Club', 'S B Park Sarbojanin', 'Behala Nutan Dal', 'Behala Friends', 'Behala Club'
-                ]),
-                _buildRegionSection('North Kolkata', [
-                  'Kidderpore 25 Pally Club', 'Dum Dum Park Bharat Chakra', 'Dum Dum Park Tarun Dal', 'Dum Dum Park Tarun Sangha', 'Ahiritola Sarbojanin', 'Ahiritola Yubak Brinda', 'Jagat Mukherjee Park', 'Chorebagan Sarbojanin', 'Chaltabagan Sarbajanin', 'Sikdar Bagan', 'Tala Barowari', 'Mitali Sangha Kankurgachi', 'Prafulla Kanan Paschim Adhibasi Brinda', 'Aswininagar Bandhu Mahal', 'Hatibagan Sarbojanin', 'Hatibagan Nabin Pally', 'Kashi Bose Lane', 'Nalin Sarkar Street'
-                ]),
-                _buildRegionSection('Central Kolkata', [
-                  'Beliaghata 33 Palli', 'Santosh Mitra Square'
-                ]),
-                _buildRegionSection('Salt Lake & Rajarhat', [
-                  'New Town Sarbojanin', 'AK Block Salt Lake'
-                ]),
-                _buildRegionSection('South Kolkata', [
-                  'Ajeya Sanghati', 'Vivekananda Park Athletic Club', '41 Pally Club', 'Badam Tala Ashar Sangha', 'Pratapaditya Road – Tricon Park', 'Alipur Sarbojanin', 'Bakul Bagan Sarbojanin', 'Chakraberia Sarbojanin', 'Abasar', 'Netaji Jatiyo Seva Dal', 'Kendua Shanti Sangha', 'Purbachal Shakti Sangha', 'Santoshpur Lake Pally', 'Santoshpur Trikon Park', '95 Pally', 'Hindusthan Park Sarbojanin', 'Rajdanga Naba Uday Sangha', 'Bosepukur Sitala Mandir'
-                ]),
+                Consumer(
+                  builder: (context, ref, child) {
+                    final detailsState = ref.watch(packageDetailsProvider(package.id));
+                    
+                    return detailsState.when(
+                      data: (fullPackage) {
+                        if (fullPackage.includedPandalsByZone.isEmpty) {
+                          return const Text('No pandals available.', style: TextStyle(color: Colors.white54));
+                        }
+                        
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: fullPackage.includedPandalsByZone.entries.map((entry) {
+                            return _buildRegionSection(entry.key, entry.value);
+                          }).toList(),
+                        );
+                      },
+                      loading: () => const Center(child: CircularProgressIndicator(color: goldColor)),
+                      error: (err, _) => Text('Failed to load details: $err', style: const TextStyle(color: Colors.red)),
+                    );
+                  },
+                ),
                 
                 const SizedBox(height: 48),
                 

@@ -71,6 +71,7 @@ class _JoinGroupScreenState extends ConsumerState<JoinGroupScreen> {
       setState(() => _isLoading = false);
       if (success) {
         ref.invalidate(myGroupsProvider);
+        try { await ref.read(myGroupsProvider.future); } catch (_) {}
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Joined Group Successfully!'), backgroundColor: AppColors.successGreen),
         );

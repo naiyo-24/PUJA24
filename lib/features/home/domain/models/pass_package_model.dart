@@ -7,6 +7,7 @@ class PassPackageModel {
   final String collectionVenue;
   final bool isActive;
   final List<String> includedPandalIds;
+  final Map<String, List<String>> includedPandalsByZone;
 
   PassPackageModel({
     required this.id,
@@ -17,6 +18,7 @@ class PassPackageModel {
     required this.collectionVenue,
     required this.isActive,
     required this.includedPandalIds,
+    required this.includedPandalsByZone,
   });
 
   factory PassPackageModel.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,20 @@ class PassPackageModel {
       collectionVenue: json['collection_venue'] ?? '',
       isActive: json['is_active'] ?? true,
       includedPandalIds: List<String>.from(json['included_pandal_ids'] ?? []),
+      includedPandalsByZone: json['included_pandals_by_zone'] != null
+          ? Map<String, List<String>>.from(
+              (json['included_pandals_by_zone'] as Map<String, dynamic>).map(
+                (key, value) {
+                  final list = (value as List).map((e) {
+                    if (e is String) return e;
+                    if (e is Map && e['name'] != null) return e['name'].toString();
+                    return e.toString();
+                  }).toList();
+                  return MapEntry(key, list);
+                },
+              ),
+            )
+          : <String, List<String>>{},
     );
   }
 }

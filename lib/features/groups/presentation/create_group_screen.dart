@@ -78,6 +78,9 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
       if (success) {
         // Refresh dashboard
         ref.invalidate(myGroupsProvider);
+        try {
+          await ref.read(myGroupsProvider.future);
+        } catch (_) {}
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Group created successfully!')),

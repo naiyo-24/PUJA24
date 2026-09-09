@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:battery_plus/battery_plus.dart';
 import '../../../core/network/api_config.dart';
+import '../../../core/services/background_location_service.dart';
 
 // Provides the websocket service instance for a group
 final groupWebsocketServiceProvider = Provider.autoDispose.family<GroupWebsocketService, String>((ref, groupId) {
@@ -339,6 +340,9 @@ class GroupWebsocketService {
 
     _isSharingLocation = true;
     
+    // Start background service
+    BackgroundLocationService().startService(groupId);
+    
     // Broadcast initial location immediately
     forceRefresh();
 
@@ -417,6 +421,10 @@ class GroupWebsocketService {
   void stopLiveLocationSharing() {
     _isSharingLocation = false;
     isLocationPaused = false;
+    
+    // Stop background service
+    BackgroundLocationService().stopService(groupId);
+    
     _shareTimer?.cancel();
     _shareTimer = null;
     shareDurationString = 'Until I stop';

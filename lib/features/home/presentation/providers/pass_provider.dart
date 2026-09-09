@@ -9,6 +9,11 @@ final availablePassesProvider = FutureProvider<List<PassPackageModel>>((ref) asy
   return repository.getAvailablePackages();
 });
 
+final packageDetailsProvider = FutureProvider.family<PassPackageModel, String>((ref, packageId) async {
+  final repository = ref.watch(passRepositoryProvider);
+  return repository.getPackageDetails(packageId);
+});
+
 final myVouchersProvider = FutureProvider<List<UserVoucherModel>>((ref) async {
   final authState = ref.watch(authProvider);
   final repository = ref.watch(passRepositoryProvider);

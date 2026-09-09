@@ -183,7 +183,15 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: AppTypography.sectionHeading(color: AppColors.deepMaroon, fontSize: 20)),
+          Expanded(
+            child: Text(
+              title, 
+              style: AppTypography.sectionHeading(color: AppColors.deepMaroon, fontSize: 20),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ),
+          const SizedBox(width: 8),
           Row(
             children: [
               Text(actionText, style: AppTypography.button(color: AppColors.pujaRed, fontSize: 13)),

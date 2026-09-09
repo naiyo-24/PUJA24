@@ -204,7 +204,13 @@ class GroupsApiService {
           'Authorization': 'Bearer $token',
         },
       );
-      return response.statusCode == 200;
+      
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return true;
+      } else {
+        print('Error removing member. Status: ${response.statusCode}, Body: ${response.body}');
+        return false;
+      }
     } catch (e) {
       print('Error removing member: $e');
       return false;

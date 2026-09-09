@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:durga_puja_explorer/core/theme/app_colors.dart';
 
 class ProfileCreationScreen extends ConsumerStatefulWidget {
@@ -203,29 +204,25 @@ class _ProfileCreationScreenState extends ConsumerState<ProfileCreationScreen> w
         throw Exception('Location permissions are permanently denied, we cannot request permissions.');
       } 
 
-      // Permission granted, navigate to map picker and await result
-      final selectedLocation = await context.push<LatLng>('/map_picker');
+      // Fetch the current location
+      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
       
-      if (selectedLocation != null) {
-        setState(() {
-          _isFetchingLocation = true; // Show loading while geocoding
-        });
-        final apiKey = 'AIzaSyBmc97dQWHVQCx6obwgI3Quw2_BCJTeAIg';
-        final url = 'https://maps.googleapis.com/maps/api/geocode/json?latlng=${selectedLocation.latitude},${selectedLocation.longitude}&key=$apiKey';
-        
+      final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
+      final url = 'https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.latitude},${position.longitude}&key=$apiKey';
+      
+      try {
+        final response = await Dio(BaseOptions(connectTimeout: const Duration(seconds: 5), receiveTimeout: const Duration(seconds: 5))).get(url);
+        if (response.statusCode == 200 && response.data['status'] == 'OK' && response.data['results'].isNotEmpty) {
+          String address = response.data['results'][0]['formatted_address'];
+          setState(() {
+            _addressController.text = address;
+          });
+        } else {
+          throw Exception('Google API Failed: ${response.data['status']}');
+        }
+      } catch (e) {
         try {
-          final response = await Dio().get(url);
-          if (response.statusCode == 200 && response.data['status'] == 'OK' && response.data['results'].isNotEmpty) {
-            String address = response.data['results'][0]['formatted_address'];
-            setState(() {
-              _addressController.text = address;
-            });
-          } else {
-            throw Exception('Google API Failed: ${response.data['status']}');
-          }
-        } catch (e) {
-          // Fallback to native geocoding if Google API fails
-          List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(selectedLocation.latitude, selectedLocation.longitude);
+          List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(position.latitude, position.longitude).timeout(const Duration(seconds: 5));
           if (placemarks.isNotEmpty) {
             Placemark place = placemarks[0];
             String address = '${place.street}, ${place.subLocality}, ${place.locality}, ${place.postalCode}';
@@ -235,6 +232,8 @@ class _ProfileCreationScreenState extends ConsumerState<ProfileCreationScreen> w
               _addressController.text = address;
             });
           }
+        } catch (innerError) {
+           throw Exception('Unable to fetch address. Please enter manually.');
         }
       }
     } catch (e) {
@@ -550,6 +549,7 @@ class _ProfileCreationScreenState extends ConsumerState<ProfileCreationScreen> w
                             _buildLabel('Sex'),
                             DropdownButtonFormField<String>(
                               value: _selectedSex,
+                              isExpanded: true,
                               dropdownColor: Colors.white,
                               borderRadius: BorderRadius.circular(16),
                               elevation: 4,

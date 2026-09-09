@@ -61,11 +61,14 @@ dependencies:
   web_socket_channel: ^3.0.1
   mobile_scanner: ^5.2.2
   permission_handler: ^11.3.1
-  flutter_background_geolocation: ^5.0.0
+  flutter_background_service: ^5.1.0
+  flutter_local_notifications: ^17.1.2
   file_picker: ^12.2.0
   image_cropper: ^12.2.1
   emoji_picker_flutter: ^4.5.4
   battery_plus: ^6.1.1
+  open_filex: ^4.5.3
+  path_provider: ^2.1.5
 dev_dependencies:
   flutter_test:
     sdk: flutter

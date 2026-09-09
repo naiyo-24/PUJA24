@@ -7,12 +7,12 @@ import '../data/groups_api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-final groupMembersProvider = FutureProvider.family<List<Map<String, dynamic>>, String>((ref, groupId) async {
+final groupMembersProvider = FutureProvider.autoDispose.family<List<Map<String, dynamic>>, String>((ref, groupId) async {
   final apiService = ref.watch(groupsApiServiceProvider);
   return apiService.fetchGroupMembers(groupId);
 });
 
-final groupInfoDetailsProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, groupId) async {
+final groupInfoDetailsProvider = FutureProvider.autoDispose.family<Map<String, dynamic>?, String>((ref, groupId) async {
   final apiService = ref.watch(groupsApiServiceProvider);
   return apiService.fetchGroupDetails(groupId);
 });
@@ -263,15 +263,23 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
           final String adminId = group['admin_id'] ?? '';
           final isAdmin = _currentUserId == adminId;
 
-          return CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              SliverAppBar(
-                expandedHeight: 280.0,
-                pinned: true,
-                stretch: true,
-                backgroundColor: color,
-                elevation: 0,
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(groupMembersProvider(widget.groupId));
+              ref.invalidate(groupInfoDetailsProvider(widget.groupId));
+              // Small delay to let UI show the spinner
+              await Future.delayed(const Duration(milliseconds: 500));
+            },
+            color: AppColors.pujaRed,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+              slivers: [
+                SliverAppBar(
+                  expandedHeight: 280.0,
+                  pinned: true,
+                  stretch: true,
+                  backgroundColor: color,
+                  elevation: 0,
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
                   onPressed: () {
@@ -660,6 +668,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                                       
                                  if (success && mounted) {
                                    ref.invalidate(myGroupsProvider);
+                                   try { await ref.read(myGroupsProvider.future); } catch (_) {}
                                    context.go('/explore');
                                  } else if (mounted) {
                                    ScaffoldMessenger.of(context).showSnackBar(
@@ -692,6 +701,7 @@ class _GroupInfoScreenState extends ConsumerState<GroupInfoScreen> {
                 ),
               ),
             ],
+          ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),

@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'core/theme/app_theme.dart';
 import 'routes/app_router.dart';
+import 'core/services/background_location_service.dart';
 
 import 'package:flutter/services.dart';
 
@@ -16,6 +17,10 @@ void main() async {
   
   await Firebase.initializeApp();
   await dotenv.load(fileName: ".env");
+  
+  try {
+    await BackgroundLocationService().initialize();
+  } catch (_) {}
   
   runApp(
     const ProviderScope(

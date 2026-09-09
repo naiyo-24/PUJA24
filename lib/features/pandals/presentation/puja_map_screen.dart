@@ -27,7 +27,8 @@ final mapNavigatingProvider = StateProvider<bool>((ref) => false);
 final navigationTargetProvider = StateProvider<PujaDetailModel?>((ref) => null);
 
 class PujaMapScreen extends ConsumerStatefulWidget {
-  const PujaMapScreen({super.key});
+  final String initialFilter;
+  const PujaMapScreen({super.key, this.initialFilter = 'Pandals'});
 
   @override
   ConsumerState<PujaMapScreen> createState() => _PujaMapScreenState();
@@ -39,7 +40,7 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
   bool _isLoadingLocation = true;
   bool _isLoadingFilterData = false;
   PujaDetailModel? _selectedPuja;
-  String _selectedFilter = 'Pandals';
+  late String _selectedFilter;
   
   List<LatLng> _routePoints = [];
   bool _isNavigating = false;
@@ -58,19 +59,35 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
   List<Map<String, dynamic>> _nearbyToilets = [];
   List<RestaurantModel> _offlineFood = [];
   List<Map<String, dynamic>> _nearbyParking = [];
+  List<Map<String, dynamic>> _nearbyHospitals = [];
+  List<Map<String, dynamic>> _nearbyNursingHomes = [];
+  List<Map<String, dynamic>> _nearbyTrainStations = [];
 
   List<RouteStep> _routeSteps = [];
   DateTime? _lastRouteFetchTime;
 
   StreamSubscription<Position>? _positionStreamSubscription;
 
-  final List<String> _filters = ['Pandals', 'Metro', 'Pay & Use', 'Food'];
+  final List<String> _filters = ['Pandals', 'Metro', 'Pay & Use', 'Food', 'Hospitals', 'Nursing Homes', 'Stations', 'Parking'];
 
   @override
   void initState() {
     super.initState();
+    _selectedFilter = widget.initialFilter;
     _startLocationTracking();
     _loadProfileMarker();
+    
+    // Check if we need to navigate immediately on map open
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final initialTarget = ref.read(navigationTargetProvider);
+      if (initialTarget != null) {
+        setState(() {
+          _selectedPuja = initialTarget;
+        });
+        _startNavigation(initialTarget);
+        ref.read(navigationTargetProvider.notifier).state = null;
+      }
+    });
   }
 
   Future<void> _loadProfileMarker() async {
@@ -245,6 +262,8 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
           _isLoadingLocation = false;
         });
         _recenter();
+        // Fetch data for the initial filter if needed
+        _onFilterSelected(_selectedFilter);
       }
 
       // Start listening to the stream for live tracking
@@ -361,6 +380,18 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
               _isLoadingFilterData = false;
           });
         }
+    } else if (filter == 'Hospitals' && _userLocation != null && _nearbyHospitals.isEmpty) {
+      setState(() => _isLoadingFilterData = true);
+      final list = await _placesService.getNearbyHospitals(_userLocation!.latitude, _userLocation!.longitude);
+      if (mounted) setState(() { _nearbyHospitals = list; _isLoadingFilterData = false; });
+    } else if (filter == 'Nursing Homes' && _userLocation != null && _nearbyNursingHomes.isEmpty) {
+      setState(() => _isLoadingFilterData = true);
+      final list = await _placesService.getNearbyNursingHomes(_userLocation!.latitude, _userLocation!.longitude);
+      if (mounted) setState(() { _nearbyNursingHomes = list; _isLoadingFilterData = false; });
+    } else if (filter == 'Stations' && _userLocation != null && _nearbyTrainStations.isEmpty) {
+      setState(() => _isLoadingFilterData = true);
+      final list = await _placesService.getNearbyStations(_userLocation!.latitude, _userLocation!.longitude);
+      if (mounted) setState(() { _nearbyTrainStations = list; _isLoadingFilterData = false; });
     }
   }
 
@@ -661,6 +692,35 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
                       position: LatLng(spot['lat'], spot['lng']),
                       icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue), // Blue for Parking
                       infoWindow: InfoWindow(title: spot['name']),
+                      onTap: () {
+                        final placePuja = PujaDetailModel(
+                          id: spot['place_id'],
+                          name: spot['name'],
+                          type: 'parking',
+                          area: 'Parking Facility',
+                          rating: '0',
+                          distance: '',
+                          latitude: spot['lat'],
+                          longitude: spot['lng'],
+                          imageUrl: '',
+                          theme2026: '',
+                          crowdStatus: 'Normal',
+                          queueTimeMins: 0,
+                          historySummary: 'GOOGLE_PLACE',
+                          idolArtist: '',
+                          pandalDesigner: '',
+                          totalPhotos: 0,
+                          amenities: [],
+                          nearestMetro: '',
+                          nearestBusStop: '',
+                          nearestCafe: '',
+                          nearestParking: '',
+                          nearestHospital: '',
+                          payAndUseToilet: '',
+                          rainStatus: 'Clear',
+                        );
+                        _showPujaDetails(placePuja);
+                      },
                     ),
                   );
                 }
@@ -705,7 +765,92 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
                   ));
                 }
               }
+              if (_selectedFilter == 'Hospitals') {
+                for (var hospital in _nearbyHospitals) {
+                  googleMarkers.add(Marker(
+                    markerId: MarkerId(hospital['place_id']),
+                    position: LatLng(hospital['lat'], hospital['lng']),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+                    infoWindow: InfoWindow(title: hospital['name']),
+                    onTap: () {
+                      final placePuja = PujaDetailModel(
+                        id: hospital['place_id'],
+                        name: hospital['name'],
+                        type: 'hospital',
+                        area: 'Hospital',
+                        rating: '0',
+                        distance: '',
+                        latitude: hospital['lat'],
+                        longitude: hospital['lng'],
+                        imageUrl: '', theme2026: '', crowdStatus: 'Normal', queueTimeMins: 0,
+                        historySummary: 'GOOGLE_PLACE', idolArtist: '', pandalDesigner: '',
+                        totalPhotos: 0, amenities: [], nearestMetro: '', nearestBusStop: '',
+                        nearestCafe: '', nearestParking: '', nearestHospital: '',
+                        payAndUseToilet: '', rainStatus: 'Clear',
+                      );
+                      _showPujaDetails(placePuja);
+                    },
+                  ));
+                }
+              }
 
+              if (_selectedFilter == 'Nursing Homes') {
+                for (var nh in _nearbyNursingHomes) {
+                  googleMarkers.add(Marker(
+                    markerId: MarkerId(nh['place_id']),
+                    position: LatLng(nh['lat'], nh['lng']),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose),
+                    infoWindow: InfoWindow(title: nh['name']),
+                    onTap: () {
+                      final placePuja = PujaDetailModel(
+                        id: nh['place_id'],
+                        name: nh['name'],
+                        type: 'nursing_home',
+                        area: 'Nursing Home',
+                        rating: '0',
+                        distance: '',
+                        latitude: nh['lat'],
+                        longitude: nh['lng'],
+                        imageUrl: '', theme2026: '', crowdStatus: 'Normal', queueTimeMins: 0,
+                        historySummary: 'GOOGLE_PLACE', idolArtist: '', pandalDesigner: '',
+                        totalPhotos: 0, amenities: [], nearestMetro: '', nearestBusStop: '',
+                        nearestCafe: '', nearestParking: '', nearestHospital: '',
+                        payAndUseToilet: '', rainStatus: 'Clear',
+                      );
+                      _showPujaDetails(placePuja);
+                    },
+                  ));
+                }
+              }
+
+              if (_selectedFilter == 'Stations') {
+                for (var station in _nearbyTrainStations) {
+                  googleMarkers.add(Marker(
+                    markerId: MarkerId(station['place_id']),
+                    position: LatLng(station['lat'], station['lng']),
+                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+                    infoWindow: InfoWindow(title: station['name']),
+                    onTap: () {
+                      final placePuja = PujaDetailModel(
+                        id: station['place_id'],
+                        name: station['name'],
+                        type: 'station',
+                        area: 'Railway Station',
+                        rating: '0',
+                        distance: '',
+                        latitude: station['lat'],
+                        longitude: station['lng'],
+                        imageUrl: '', theme2026: '', crowdStatus: 'Normal', queueTimeMins: 0,
+                        historySummary: 'GOOGLE_PLACE', idolArtist: '', pandalDesigner: '',
+                        totalPhotos: 0, amenities: [], nearestMetro: '', nearestBusStop: '',
+                        nearestCafe: '', nearestParking: '', nearestHospital: '',
+                        payAndUseToilet: '', rainStatus: 'Clear',
+                      );
+                      _showPujaDetails(placePuja);
+                    },
+                  ));
+                }
+              }
               if (_customSearchMarker != null) {
                 googleMarkers.add(_customSearchMarker!);
               }
@@ -752,7 +897,7 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
                 zoomControlsEnabled: false,
                 mapToolbarEnabled: false,
                 padding: const EdgeInsets.only(bottom: 90), // Offset for custom bottom nav bar
-                onTap: (_) => setState(() => _selectedPuja = null),
+                onTap: _onMapTapped,
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -930,7 +1075,7 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
           // Controls (Recenter)
           if (!_isNavigating)
             Positioned(
-              bottom: _selectedPuja != null ? 180 : 100,
+              bottom: _selectedPuja != null ? 220 : 140, // Increased bottom padding to clear the custom bottom navbar
               right: 16,
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -979,11 +1124,24 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
   }
 
   Future<void> _startNavigation(PujaDetailModel destination) async {
-    if (_userLocation == null) return;
-    
     setState(() {
       _isFetchingRoute = true;
     });
+
+    if (_userLocation == null) {
+      try {
+        final pos = await Geolocator.getCurrentPosition(timeLimit: const Duration(seconds: 5));
+        _userLocation = LatLng(pos.latitude, pos.longitude);
+      } catch (e) {
+        if (mounted) setState(() => _isFetchingRoute = false);
+        return;
+      }
+    }
+    
+    if (_userLocation == null) {
+      if (mounted) setState(() => _isFetchingRoute = false);
+      return;
+    }
     
     final routeData = await _routeService.getRouteData(
       LatLng(_userLocation!.latitude, _userLocation!.longitude),
@@ -1022,6 +1180,48 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
         _duration = routeData.durationSeconds;
         _routeSteps = routeData.steps;
       });
+    }
+  }
+
+  Future<void> _onMapTapped(LatLng position) async {
+    setState(() {
+      _selectedPuja = null;
+    });
+
+    try {
+      final nearestPlace = await _placesService.getNearestPlace(position.latitude, position.longitude);
+      if (nearestPlace != null) {
+        String poiType = 'custom';
+        final nameLower = (nearestPlace['name'] as String).toLowerCase();
+        if (nameLower.contains('hospital') || nameLower.contains('clinic') || nameLower.contains('multispeciality')) {
+          poiType = 'hospital';
+        } else if (nameLower.contains('nursing home')) {
+          poiType = 'nursing_home';
+        } else if (nameLower.contains('station')) {
+          poiType = 'station';
+        } else if (nameLower.contains('restaurant') || nameLower.contains('cafe')) {
+          poiType = 'restaurant';
+        }
+
+        final placePuja = PujaDetailModel(
+          id: nearestPlace['place_id'],
+          name: nearestPlace['name'],
+          type: poiType,
+          area: 'Map Location',
+          rating: '0',
+          distance: '',
+          latitude: nearestPlace['lat'],
+          longitude: nearestPlace['lng'],
+          imageUrl: '', theme2026: '', crowdStatus: 'Normal', queueTimeMins: 0,
+          historySummary: 'GOOGLE_PLACE', idolArtist: '', pandalDesigner: '',
+          totalPhotos: 0, amenities: [], nearestMetro: '', nearestBusStop: '',
+          nearestCafe: '', nearestParking: '', nearestHospital: '',
+          payAndUseToilet: '', rainStatus: 'Clear',
+        );
+        _showPujaDetails(placePuja);
+      }
+    } catch (e) {
+      debugPrint('Failed to resolve tapped map location: $e');
     }
   }
 
@@ -1160,16 +1360,17 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(32),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              color: AppColors.deepMaroon.withOpacity(0.08),
+              blurRadius: 32,
+              spreadRadius: 8,
+              offset: const Offset(0, 16),
             ),
           ],
         ),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1179,12 +1380,29 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.pujaRed.withOpacity(0.1),
+                    gradient: const LinearGradient(
+                      colors: [AppColors.pujaRed, AppColors.deepMaroon],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                     borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(color: AppColors.pujaRed.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4)),
+                    ],
                   ),
-                  child: const Icon(Icons.temple_hindu, color: AppColors.pujaRed),
+                  child: Icon(
+                    puja.type == 'hospital' || puja.type == 'nursing_home' ? Icons.local_hospital :
+                    puja.type == 'station' || puja.type == 'metro' ? Icons.directions_subway :
+                    puja.type == 'restaurant' ? Icons.restaurant :
+                    puja.type == 'toilet' ? Icons.wc :
+                    puja.type == 'parking' ? Icons.local_parking :
+                    puja.type == 'custom' ? Icons.place :
+                    Icons.temple_hindu,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -1193,14 +1411,24 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
                     children: [
                       Text(
                         puja.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: AppColors.charcoal, letterSpacing: -0.5),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${puja.area} · $distanceText',
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(Icons.location_on, size: 14, color: Colors.grey.shade500),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              '${puja.area}  •  $distanceText',
+                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.w600),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -1212,17 +1440,17 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
                     });
                   },
                   child: Container(
-                    padding: const EdgeInsets.all(6),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade100,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.close, size: 16, color: Colors.grey),
+                    child: const Icon(Icons.close, size: 18, color: Colors.black54),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             
             // ETA Pills
             if (walkTime != '--') ...[
@@ -1242,101 +1470,89 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
               // Status Cards
               Row(
                 children: [
-                Expanded(
-                  child: _buildStatusCard(
-                    icon: Icons.water_drop_outlined,
-                    iconColor: Colors.blue.shade700,
-                    bgColor: Colors.blue.shade50,
-                    title: 'Rain status',
-                    value: puja.rainStatus,
-                    subtitle: 'Updated just now',
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatusCard(
-                    icon: Icons.people_outline,
-                    iconColor: AppColors.pujaRed,
-                    bgColor: AppColors.pujaRed.withOpacity(0.1),
-                    title: 'Crowd level',
-                    value: puja.crowdStatus,
-                    subtitle: 'Live reports',
-                  ),
-                ),
-              ],
-            ),
-              const SizedBox(height: 12),
-              
-              // Visited Recently Banner
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isWithin500m ? AppColors.saffron.withOpacity(0.15) : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  Icon(isWithin500m ? Icons.location_on : Icons.info_outline, color: isWithin500m ? AppColors.saffron : Colors.grey.shade600),
-                  const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(isWithin500m ? 'You are nearby!' : 'N.B. Live Updates', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        Text(isWithin500m ? 'Help others update the live status' : 'Only available within 500m of the pandal', style: TextStyle(color: Colors.grey.shade700, fontSize: 11)),
-                      ],
+                    child: _buildStatusCard(
+                      icon: Icons.water_drop,
+                      gradient: LinearGradient(colors: [Colors.blue.shade400, Colors.blue.shade600]),
+                      title: 'Rain Status',
+                      value: puja.rainStatus,
+                      subtitle: 'Updated just now',
                     ),
                   ),
-                  GestureDetector(
-                    onTap: isWithin500m ? () {
-                      LiveUpdateBottomSheet.show(context, puja, onUpdate: (rain, crowd) {
-                        setState(() {
-                          _selectedPuja = PujaDetailModel(
-                            id: puja.id,
-                            name: puja.name,
-                            type: puja.type,
-                            area: puja.area,
-                            rating: puja.rating,
-                            distance: puja.distance,
-                            latitude: puja.latitude,
-                            longitude: puja.longitude,
-                            historySummary: puja.historySummary,
-                            theme2026: puja.theme2026,
-                            idolArtist: puja.idolArtist,
-                            pandalDesigner: puja.pandalDesigner,
-                            imageUrl: puja.imageUrl,
-                            totalPhotos: puja.totalPhotos,
-                            crowdStatus: crowd,
-                            queueTimeMins: puja.queueTimeMins,
-                            amenities: puja.amenities,
-                            nearestMetro: puja.nearestMetro,
-                            nearestBusStop: puja.nearestBusStop,
-                            nearestCafe: puja.nearestCafe,
-                            nearestParking: puja.nearestParking,
-                            nearestHospital: puja.nearestHospital,
-                            payAndUseToilet: puja.payAndUseToilet,
-                            rainStatus: rain,
-                          );
-                        });
-                      });
-                    } : null,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isWithin500m ? AppColors.saffron : Colors.grey.shade400,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text('Update', style: TextStyle(color: isWithin500m ? Colors.white : Colors.grey.shade100, fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatusCard(
+                      icon: Icons.groups,
+                      gradient: const LinearGradient(colors: [AppColors.pujaRed, AppColors.deepMaroon]),
+                      title: 'Crowd Level',
+                      value: puja.crowdStatus,
+                      subtitle: 'Live reports',
                     ),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 16),
+              
+              // Visited Recently Banner
+              GestureDetector(
+                onTap: isWithin500m ? () {
+                  LiveUpdateBottomSheet.show(context, puja, onUpdate: (rain, crowd) {
+                    setState(() {
+                      _selectedPuja = PujaDetailModel(
+                        id: puja.id, name: puja.name, type: puja.type, area: puja.area,
+                        rating: puja.rating, distance: puja.distance, latitude: puja.latitude,
+                        longitude: puja.longitude, historySummary: puja.historySummary,
+                        theme2026: puja.theme2026, idolArtist: puja.idolArtist,
+                        pandalDesigner: puja.pandalDesigner, imageUrl: puja.imageUrl,
+                        totalPhotos: puja.totalPhotos, crowdStatus: crowd,
+                        queueTimeMins: puja.queueTimeMins, amenities: puja.amenities,
+                        nearestMetro: puja.nearestMetro, nearestBusStop: puja.nearestBusStop,
+                        nearestCafe: puja.nearestCafe, nearestParking: puja.nearestParking,
+                        nearestHospital: puja.nearestHospital, payAndUseToilet: puja.payAndUseToilet,
+                        rainStatus: rain,
+                      );
+                    });
+                  });
+                } : null,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: isWithin500m ? AppColors.saffron.withOpacity(0.12) : Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: isWithin500m ? AppColors.saffron.withOpacity(0.3) : Colors.grey.shade200, width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isWithin500m ? AppColors.saffron.withOpacity(0.2) : Colors.grey.shade200,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(isWithin500m ? Icons.my_location : Icons.lock_outline, color: isWithin500m ? AppColors.deepMaroon : Colors.grey.shade500, size: 20),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(isWithin500m ? 'You are at the Pandal!' : 'Live Updates Locked', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.charcoal)),
+                            const SizedBox(height: 2),
+                            Text(isWithin500m ? 'Tap here to update live status.' : 'Only available within 500m.', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      if (isWithin500m)
+                        const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.saffron),
+                    ],
+                  ),
+                ),
+              ),
             ],
             
             const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Divider(height: 1, color: Color(0xFFEEEEEE)),
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Divider(height: 1.5, color: Color(0xFFF2F2F2)),
             ),
             
             // Metro Row
@@ -1386,45 +1602,46 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
             Row(
               children: [
                 Expanded(
-                  flex: 2,
+                  flex: 3,
                   child: ElevatedButton.icon(
                     onPressed: () => _startNavigation(puja),
-                    icon: const Icon(Icons.navigation, color: Colors.white, size: 18),
-                    label: const Text('Navigate', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                    icon: const Icon(Icons.navigation, color: Colors.white, size: 20),
+                    label: const Text('Navigate', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.pujaRed,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      elevation: 0,
+                      elevation: 4,
+                      shadowColor: AppColors.pujaRed.withOpacity(0.4),
                     ),
                   ),
                 ),
                 if (isRealPandal) ...[
                   const SizedBox(width: 12),
                   Expanded(
-                    flex: 1,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PujaDetailScreen(id: puja.id),
+                    flex: 2,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PujaDetailScreen(id: puja.id),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.info_outline, color: AppColors.deepMaroon, size: 20),
+                      label: const Text('Details', style: TextStyle(color: AppColors.deepMaroon, fontSize: 16, fontWeight: FontWeight.w600)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.ivory,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: const BorderSide(color: AppColors.antiqueGold, width: 1.5),
                         ),
-                      );
-                    },
-                    icon: const Icon(Icons.info_outline, color: AppColors.charcoal, size: 18),
-                    label: const Text('Details', style: TextStyle(color: AppColors.charcoal, fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(color: Colors.grey.shade300),
+                        elevation: 0,
                       ),
-                      elevation: 0,
                     ),
                   ),
-                ),
                 ]
               ],
             ),
@@ -1451,27 +1668,43 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
     );
   }
 
-  Widget _buildStatusCard({required IconData icon, required Color iconColor, required Color bgColor, required String title, required String value, required String subtitle}) {
+  Widget _buildStatusCard({required IconData icon, required LinearGradient gradient, required String title, required String value, required String subtitle}) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade200, width: 1.5),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: iconColor),
-              const SizedBox(width: 6),
-              Text(title, style: TextStyle(fontSize: 11, color: Colors.grey.shade700)),
+              ShaderMask(
+                shaderCallback: (bounds) => gradient.createShader(bounds),
+                child: Icon(icon, size: 18, color: Colors.white),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(title, style: TextStyle(fontSize: 12, color: Colors.grey.shade600, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
             ],
           ),
-          const SizedBox(height: 6),
-          Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: iconColor)),
-          const SizedBox(height: 2),
-          Text(subtitle, style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+          const SizedBox(height: 10),
+          ShaderMask(
+            shaderCallback: (bounds) => gradient.createShader(bounds),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(subtitle, style: TextStyle(fontSize: 10, color: Colors.grey.shade500, fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
       ),
     );

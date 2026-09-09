@@ -284,11 +284,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     _CategoryItem(
                       icon: Icons.local_parking, 
                       label: 'Parking',
-                      onTap: () => context.push('/parking'),
+                      onTap: () => context.go(Uri(path: '/map', queryParameters: {'filter': 'Parking'}).toString()),
                     ),
-                    _CategoryItem(icon: Icons.wc, label: 'Toilets'),
-                    _CategoryItem(icon: Icons.event, label: 'Events'),
-                    _CategoryItem(icon: Icons.grid_view, label: 'More'),
+                    _CategoryItem(
+                      icon: Icons.wc, 
+                      label: 'Toilets',
+                      onTap: () => context.go(Uri(path: '/map', queryParameters: {'filter': 'Pay & Use'}).toString()),
+                    ),
                   ],
                 ),
               ),
@@ -645,87 +647,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
 
-              // Upcoming Event
-              ref.watch(bannersProvider).when(
-                data: (banners) {
-                  final eventBanners = banners.where((b) => b.bannerType == 'EVENT').toList();
-                  if (eventBanners.isEmpty) return const SizedBox.shrink();
-                  
-                  final eventBanner = eventBanners.first;
-                  
-                  return Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFF3C77C), width: 1),
-                      image: DecorationImage(
-                        image: CachedNetworkImageProvider(eventBanner.imageUrl),
-                        fit: BoxFit.cover,
-                        colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.6), BlendMode.darken),
-                      ),
-                    ),
-                    child: Stack(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                eventBanner.subtitle ?? 'Upcoming Event',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: const Color(0xFFF3C77C),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                eventBanner.title,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  color: AppColors.pureWhite,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                            ],
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 12,
-                          right: 12,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              if (eventBanner.actionType == 'NAVIGATE' && eventBanner.actionPayload != null) {
-                                context.push(eventBanner.actionPayload!);
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFF3C77C),
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              minimumSize: Size.zero,
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text('View Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                SizedBox(width: 4),
-                                Icon(Icons.arrow_forward_ios, size: 10),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (err, stack) => const SizedBox.shrink(),
-              ),
               const SizedBox(height: 100), // Padding to allow scrolling past the floating navbar
             ],
           ),
@@ -848,11 +770,14 @@ class _PandalCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  name,
-                  style: theme.textTheme.titleMedium?.copyWith(fontSize: 14),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                SizedBox(
+                  height: 46, // Increased height for up to 2 lines of text
+                  child: Text(
+                    name,
+                    style: theme.textTheme.titleMedium?.copyWith(fontSize: 14, height: 1.2),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Row(

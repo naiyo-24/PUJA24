@@ -1,8 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class PlacesApiService {
-  static const String _apiKey = 'AIzaSyBmc97dQWHVQCx6obwgI3Quw2_BCJTeAIg';
+  static String get _apiKey => dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
   static const String _baseUrl = 'https://maps.googleapis.com/maps/api/place';
   final Dio _dio = Dio();
 
@@ -142,7 +143,7 @@ class PlacesApiService {
         };
 
         if (nextPageToken == null) {
-          queryParams['location'] = '\$lat,\$lng';
+          queryParams['location'] = '$lat,$lng';
           queryParams['radius'] = '15000'; // 15km radius
           queryParams['keyword'] = 'parking';
         } else {
@@ -151,7 +152,7 @@ class PlacesApiService {
         }
 
         final response = await _dio.get(
-          '\$_baseUrl/nearbysearch/json',
+          '$_baseUrl/nearbysearch/json',
           queryParameters: queryParams,
         );
 
@@ -170,7 +171,7 @@ class PlacesApiService {
           nextPageToken = response.data['next_page_token'];
         } else if (response.data['status'] == 'INVALID_REQUEST' && nextPageToken != null) {
            await Future.delayed(const Duration(seconds: 2));
-           final retryResponse = await _dio.get('\$_baseUrl/nearbysearch/json', queryParameters: queryParams);
+           final retryResponse = await _dio.get('$_baseUrl/nearbysearch/json', queryParameters: queryParams);
            if (retryResponse.data['status'] == 'OK') {
              final results = retryResponse.data['results'] as List;
              allParking.addAll(results.map((r) {
@@ -331,6 +332,114 @@ class PlacesApiService {
     } catch (e) {
       print('Places API Nearby Food Error: $e');
       return allFood;
+    }
+  }
+
+  // Find Nearby Hospitals
+  Future<List<Map<String, dynamic>>> getNearbyHospitals(double lat, double lng) async {
+    return _fetchNearby(lat, lng, 'hospital', '5000');
+  }
+
+  // Find Nearby Nursing Homes
+  Future<List<Map<String, dynamic>>> getNearbyNursingHomes(double lat, double lng) async {
+    return _fetchNearby(lat, lng, 'health', '5000', keyword: 'nursing home');
+  }
+
+  // Find Nearby Train Stations
+  Future<List<Map<String, dynamic>>> getNearbyStations(double lat, double lng) async {
+    return _fetchNearby(lat, lng, 'train_station', '50000');
+  }
+
+  // Find nearest place (for map taps)
+  Future<Map<String, dynamic>?> getNearestPlace(double lat, double lng) async {
+    final results = await _fetchNearby(lat, lng, '', '50');
+    if (results.isEmpty) return null;
+    
+    // Filter out streets, localities, and generic regions to prioritize actual businesses/POIs
+    final validPlaces = results.where((place) {
+      final types = (place['types'] as List<dynamic>?)?.cast<String>() ?? [];
+      return !types.contains('route') && 
+             !types.contains('street_address') && 
+             !types.contains('political') && 
+             !types.contains('locality') &&
+             !types.contains('sublocality');
+    }).toList();
+    
+    if (validPlaces.isNotEmpty) {
+      return validPlaces.first;
+    }
+    
+    return results.first; // Fallback if only the street is found
+  }
+
+  // Helper method for nearby searches
+  Future<List<Map<String, dynamic>>> _fetchNearby(double lat, double lng, String type, String radius, {String? keyword}) async {
+    List<Map<String, dynamic>> allPlaces = [];
+    String? nextPageToken;
+
+    try {
+      do {
+        final queryParams = <String, dynamic>{
+          'key': _apiKey,
+        };
+
+        if (nextPageToken == null) {
+          queryParams['location'] = '${lat},${lng}';
+          queryParams['radius'] = radius;
+          if (type.isNotEmpty) queryParams['type'] = type;
+          if (keyword != null) queryParams['keyword'] = keyword;
+        } else {
+          queryParams['pagetoken'] = nextPageToken;
+          await Future.delayed(const Duration(seconds: 2));
+        }
+
+        final response = await _dio.get(
+          '$_baseUrl/nearbysearch/json',
+          queryParameters: queryParams,
+        );
+
+        if (response.data['status'] == 'OK') {
+          final results = response.data['results'] as List;
+          allPlaces.addAll(results.map((r) {
+            final loc = r['geometry']['location'];
+            return {
+              'name': r['name'],
+              'lat': loc['lat'],
+              'lng': loc['lng'],
+              'place_id': r['place_id'],
+              'types': r['types'],
+            };
+          }).toList());
+          
+          nextPageToken = response.data['next_page_token'];
+        } else if (response.data['status'] == 'INVALID_REQUEST' && nextPageToken != null) {
+           await Future.delayed(const Duration(seconds: 2));
+           final retryResponse = await _dio.get('$_baseUrl/nearbysearch/json', queryParameters: queryParams);
+           if (retryResponse.data['status'] == 'OK') {
+             final results = retryResponse.data['results'] as List;
+             allPlaces.addAll(results.map((r) {
+               final loc = r['geometry']['location'];
+               return {
+                 'name': r['name'],
+                 'lat': loc['lat'],
+                 'lng': loc['lng'],
+                 'place_id': r['place_id'],
+                 'types': r['types'],
+               };
+             }).toList());
+             nextPageToken = retryResponse.data['next_page_token'];
+           } else {
+             nextPageToken = null;
+           }
+        } else {
+          nextPageToken = null;
+        }
+      } while (nextPageToken != null && allPlaces.length < 60);
+
+      return allPlaces;
+    } catch (e) {
+      print('Places API Nearby Error ($type): $e');
+      return allPlaces;
     }
   }
 }
