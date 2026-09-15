@@ -14,7 +14,7 @@ final packageDetailsProvider = FutureProvider.family<PassPackageModel, String>((
   return repository.getPackageDetails(packageId);
 });
 
-final myVouchersProvider = FutureProvider<List<UserVoucherModel>>((ref) async {
+final myVouchersProvider = FutureProvider.autoDispose<List<UserVoucherModel>>((ref) async {
   final authState = ref.watch(authProvider);
   final repository = ref.watch(passRepositoryProvider);
   

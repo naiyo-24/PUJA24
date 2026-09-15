@@ -50,88 +50,103 @@ class MyPassesScreen extends ConsumerWidget {
             );
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(24.0),
-            physics: const BouncingScrollPhysics(),
-            itemCount: vouchers.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 24),
-            itemBuilder: (context, index) {
-              final voucher = vouchers[index];
-              return Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF141414),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: goldColor.withOpacity(0.5), width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: goldColor.withOpacity(0.1),
-                      blurRadius: 20,
-                      spreadRadius: 5,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-                      child: Image.asset(
-                        'assets/images/banner.png',
-                        width: double.infinity,
-                        fit: BoxFit.fitWidth,
+          return RefreshIndicator(
+            color: goldColor,
+            onRefresh: () async {
+              // ignore: unused_result
+              ref.refresh(myVouchersProvider);
+            },
+            child: ListView.separated(
+              padding: const EdgeInsets.all(24.0),
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: vouchers.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 24),
+              itemBuilder: (context, index) {
+                final voucher = vouchers[index];
+                final isRedeemed = voucher.status.toLowerCase() == 'redeemed';
+
+                return Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF141414),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: goldColor.withOpacity(0.5), width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: goldColor.withOpacity(0.1),
+                        blurRadius: 20,
+                        spreadRadius: 5,
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'VIP Puja Pass',
-                                style: TextStyle(
-                                  color: goldColor,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                        child: Image.asset(
+                          'assets/images/banner.png',
+                          width: double.infinity,
+                          fit: BoxFit.fitWidth,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'VIP Puja Pass',
+                                  style: TextStyle(
+                                    color: goldColor,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: Colors.green),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: isRedeemed ? Colors.red.withOpacity(0.2) : Colors.green.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: isRedeemed ? Colors.red : Colors.green),
+                                  ),
+                                  child: Text(
+                                    isRedeemed ? 'REDEEMED' : 'ACTIVE',
+                                    style: TextStyle(
+                                      color: isRedeemed ? Colors.red : Colors.green,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
-                                child: const Text('ACTIVE', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text('Purchased: ${DateFormat('MMM d, yyyy').format(voucher.createdAt)}', style: const TextStyle(color: Colors.white, fontSize: 14)),
-                          const SizedBox(height: 4),
-                          Text('Order ID: ${voucher.paymentReference}', style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
-                          const SizedBox(height: 24),
-                          
-                          // Open Details Button
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: () => _showPassDetailsSheet(context, goldColor, voucher.voucherCode, voucher.paymentReference, userName),
-                              icon: const Icon(Icons.qr_code_scanner, color: Colors.black),
-                              label: const Text(
-                                'View Pass & QR Code',
-                                style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: goldColor,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text('Purchased: ${DateFormat('MMM d, yyyy').format(voucher.createdAt)}', style: const TextStyle(color: Colors.white, fontSize: 14)),
+                            const SizedBox(height: 4),
+                            Text('Order ID: ${voucher.paymentReference}', style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+                            const SizedBox(height: 24),
+                            
+                            // Open Details Button
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: isRedeemed ? null : () => _showPassDetailsSheet(context, goldColor, voucher.voucherCode, voucher.paymentReference, userName),
+                                icon: Icon(isRedeemed ? Icons.check_circle : Icons.qr_code_scanner, color: isRedeemed ? Colors.white54 : Colors.black),
+                                label: Text(
+                                  isRedeemed ? 'Pass Redeemed' : 'View Pass & QR Code',
+                                  style: TextStyle(color: isRedeemed ? Colors.white54 : Colors.black, fontWeight: FontWeight.bold),
                                 ),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isRedeemed ? Colors.grey[800] : goldColor,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                ),
                               ),
                             ),
-                          ),
                           
                           const SizedBox(height: 24),
                           const Divider(color: Colors.white24),
@@ -155,6 +170,7 @@ class MyPassesScreen extends ConsumerWidget {
                 ),
               );
             },
+          ),
           );
         },
       ),
