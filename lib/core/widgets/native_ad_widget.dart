@@ -4,10 +4,12 @@ import '../services/ad_service.dart';
 
 class NativeAdWidget extends StatefulWidget {
   final double height;
+  final String? adUnitId;
   
   const NativeAdWidget({
     super.key,
     this.height = 300,
+    this.adUnitId,
   });
 
   @override
@@ -27,6 +29,7 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
 
   void _loadAd() {
     _nativeAd = AdService().createNativeAd(
+      adUnitId: widget.adUnitId,
       onAdLoaded: (ad) {
         setState(() {
           _isAdLoaded = true;

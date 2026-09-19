@@ -14,6 +14,8 @@ import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/network/api_config.dart';
+import '../../../core/widgets/banner_ad_widget.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../data/group_websocket_service.dart';
 import '../data/groups_api_service.dart';
 import 'widgets/itinerary_selection_sheet.dart';
@@ -471,6 +473,11 @@ class _GroupDetailsScreenState extends ConsumerState<GroupDetailsScreen> {
                 );
               },
             ),
+          ),
+          
+          // Banner Ad
+          BannerAdWidget(
+            adUnitId: dotenv.env['ADMOB_BANNER_CHAT_ANDROID'],
           ),
           
           // Message Input Area

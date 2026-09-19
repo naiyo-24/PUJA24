@@ -2,43 +2,44 @@ import 'dart:io';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AdService {
   static final AdService _instance = AdService._internal();
   factory AdService() => _instance;
   AdService._internal();
 
-  // Test Ad Unit IDs
+  // Test Ad Unit IDs as Fallbacks
   static String get bannerAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/6300978111';
+      return dotenv.env['ADMOB_BANNER_ANDROID'] ?? 'ca-app-pub-3940256099942544/6300978111';
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/2934735716';
+      return dotenv.env['ADMOB_BANNER_IOS'] ?? 'ca-app-pub-3940256099942544/2934735716';
     }
     return '';
   }
 
   static String get nativeAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/2247696110';
+      return dotenv.env['ADMOB_NATIVE_ANDROID'] ?? 'ca-app-pub-3940256099942544/2247696110';
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/3986624511';
+      return dotenv.env['ADMOB_NATIVE_IOS'] ?? 'ca-app-pub-3940256099942544/3986624511';
     }
     return '';
   }
 
   static String get rewardedAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/5224354917';
+      return dotenv.env['ADMOB_REWARDED_ANDROID'] ?? 'ca-app-pub-3940256099942544/5224354917';
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/1712467313';
+      return dotenv.env['ADMOB_REWARDED_IOS'] ?? 'ca-app-pub-3940256099942544/1712467313';
     }
     return '';
   }
 
-  BannerAd createBannerAd({required VoidCallback onAdLoaded, required void Function(LoadAdError) onAdFailedToLoad}) {
+  BannerAd createBannerAd({String? adUnitId, required VoidCallback onAdLoaded, required void Function(LoadAdError) onAdFailedToLoad}) {
     return BannerAd(
-      adUnitId: bannerAdUnitId,
+      adUnitId: adUnitId ?? bannerAdUnitId,
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
@@ -53,11 +54,12 @@ class AdService {
   }
   
   void loadRewardedAd({
+    String? adUnitId,
     required void Function(RewardedAd ad) onAdLoaded,
     required void Function(LoadAdError error) onAdFailedToLoad,
   }) {
     RewardedAd.load(
-      adUnitId: rewardedAdUnitId,
+      adUnitId: adUnitId ?? rewardedAdUnitId,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
@@ -80,9 +82,9 @@ class AdService {
     );
   }
 
-  NativeAd createNativeAd({required void Function(NativeAd ad) onAdLoaded, required void Function(LoadAdError) onAdFailedToLoad}) {
+  NativeAd createNativeAd({String? adUnitId, required void Function(NativeAd ad) onAdLoaded, required void Function(LoadAdError) onAdFailedToLoad}) {
     return NativeAd(
-      adUnitId: nativeAdUnitId,
+      adUnitId: adUnitId ?? nativeAdUnitId,
       nativeTemplateStyle: NativeTemplateStyle(
         templateType: TemplateType.medium,
         mainBackgroundColor: Colors.white,

@@ -3,7 +3,8 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../services/ad_service.dart';
 
 class BannerAdWidget extends StatefulWidget {
-  const BannerAdWidget({super.key});
+  final String? adUnitId;
+  const BannerAdWidget({super.key, this.adUnitId});
 
   @override
   State<BannerAdWidget> createState() => _BannerAdWidgetState();
@@ -22,6 +23,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 
   void _loadAd() {
     _bannerAd = AdService().createBannerAd(
+      adUnitId: widget.adUnitId,
       onAdLoaded: () {
         if (mounted) {
           setState(() {
