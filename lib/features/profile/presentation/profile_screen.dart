@@ -5,7 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/banner_ad_widget.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart';
@@ -277,6 +278,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppColors.charcoal : AppColors.ivory,
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => context.go('/explore'),
+        ),
         title: const Text('My Profile'),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -293,7 +298,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _buildStatsRow(theme, isDark),
             const SizedBox(height: 32),
             _buildMenuSection(context, theme, isDark),
-            const SizedBox(height: 40),
+            const SizedBox(height: 24),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: BannerAdWidget(),
+            ),
+            const SizedBox(height: 32),
             _buildLogoutButton(context, theme),
             const SizedBox(height: 16),
             _buildDeleteAccountButton(context, theme),
@@ -537,6 +547,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           _buildMenuItem(context, theme, Icons.route, 'My Puja Plans', isDark, onTap: () {
             context.push('/plan');
+          }),
+          _buildMenuItem(context, theme, Icons.card_giftcard, 'Puja Rewards', isDark, onTap: () {
+            context.push('/rewards');
           }),
           _buildMenuItem(context, theme, Icons.confirmation_number_outlined, 'My Passes', isDark, onTap: () {
             context.push('/my-passes');

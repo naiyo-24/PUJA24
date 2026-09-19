@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../pandals/domain/models/puja_detail_model.dart';
 import 'providers/planner_provider.dart';
+import '../../../core/widgets/banner_ad_widget.dart';
+import '../../../core/widgets/native_ad_widget.dart';
 
 class PlannerScreen extends ConsumerStatefulWidget {
   const PlannerScreen({super.key});
@@ -56,26 +58,44 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                       alignment: Alignment.center,
                     ),
                   ),
-                  const Positioned(
-                    bottom: 90, // Positioned above the 70px bottom tabs
-                    left: 20,
+                  Positioned(
+                    top: MediaQuery.of(context).padding.top + 8,
+                    left: 8,
                     right: 20,
-                    child: Column(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'My Itinerary',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 32,
-                            fontWeight: FontWeight.w900,
-                            fontFamily: 'PlayfairDisplay',
-                          ),
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                          onPressed: () {
+                            if (context.canPop()) {
+                              context.pop();
+                            } else {
+                              context.go('/home');
+                            }
+                          },
                         ),
-                        SizedBox(height: 6),
-                        Text(
-                          'Plan your pandal hopping flawlessly.',
-                          style: TextStyle(color: Colors.white70, fontSize: 14),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'My Itinerary',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w900,
+                                  fontFamily: 'PlayfairDisplay',
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Plan your pandal hopping flawlessly.',
+                                style: TextStyle(color: Colors.white70, fontSize: 14),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -125,6 +145,14 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
               ),
             ),
           ),
+          
+          // Constant Banner Ad below header
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: BannerAdWidget(),
+            ),
+          ),
 
           // ── Timeline or Empty State ──────────────────────────────────────
           plansAsync.when(
@@ -134,27 +162,32 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                 return SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.event_busy, size: 64, color: goldColor.withOpacity(0.5)),
-                        const SizedBox(height: 16),
-                        const Text('No plans yet', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        const Text('Start adding pandals and cafes to your itinerary.', style: TextStyle(color: Colors.white54, fontSize: 14)),
-                        const SizedBox(height: 24),
-                        ElevatedButton.icon(
-                          onPressed: () => context.go('/explore'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: goldColor,
-                            foregroundColor: Colors.black,
-                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.event_busy, size: 64, color: goldColor.withOpacity(0.5)),
+                          const SizedBox(height: 16),
+                          const Text('No plans yet', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          const Text('Start adding pandals and cafes to your itinerary.', style: TextStyle(color: Colors.white54, fontSize: 14)),
+                          const SizedBox(height: 24),
+                          ElevatedButton.icon(
+                            onPressed: () => context.go('/explore'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: goldColor,
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            icon: const Icon(Icons.search, size: 20),
+                            label: const Text('Explore', style: TextStyle(fontWeight: FontWeight.bold)),
                           ),
-                          icon: const Icon(Icons.search, size: 20),
-                          label: const Text('Explore', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                      ],
+                          const SizedBox(height: 40),
+                          const NativeAdWidget(height: 320),
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -164,11 +197,28 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
+                      if (index == dayPlan.length) {
+                        return const Padding(
+                          padding: EdgeInsets.only(top: 24.0, bottom: 24.0),
+                          child: NativeAdWidget(height: 320),
+                        );
+                      }
+                      
                       final item = dayPlan[index];
                       final isLast = index == dayPlan.length - 1;
-                      return _buildTimelineItem(item, isLast, goldColor);
+                      
+                      return Column(
+                        children: [
+                          _buildTimelineItem(item, isLast, goldColor),
+                          if (index == 1 && dayPlan.length > 2)
+                             const Padding(
+                               padding: EdgeInsets.only(bottom: 24.0),
+                               child: BannerAdWidget(),
+                             ),
+                        ],
+                      );
                     },
-                    childCount: dayPlan.length,
+                    childCount: dayPlan.length + 1,
                   ),
                 ),
               );

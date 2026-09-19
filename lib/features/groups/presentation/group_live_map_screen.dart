@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/network/api_config.dart';
 import '../data/group_websocket_service.dart';
@@ -70,10 +70,14 @@ class _GroupLiveMapScreenState extends ConsumerState<GroupLiveMapScreen> {
 
   Future<ui.Image?> _loadImageFromUrl(String url) async {
     try {
-      final response = await http.get(Uri.parse(url));
+      final dio = Dio();
+      final response = await dio.get(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+      );
       if (response.statusCode == 200) {
         final Completer<ui.Image> completer = Completer();
-        ui.decodeImageFromList(response.bodyBytes, (ui.Image img) {
+        ui.decodeImageFromList(response.data as Uint8List, (ui.Image img) {
           return completer.complete(img);
         });
         return await completer.future;
@@ -289,10 +293,10 @@ class _GroupLiveMapScreenState extends ConsumerState<GroupLiveMapScreen> {
     });
 
     return Scaffold(
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
+      body: Stack(
               children: [
+                if (_isLoading)
+                  const Center(child: CircularProgressIndicator(color: AppColors.pujaRed)),
                 GoogleMap(
                   initialCameraPosition: CameraPosition(
                     target: _initialPosition,
@@ -370,7 +374,7 @@ class _GroupLiveMapScreenState extends ConsumerState<GroupLiveMapScreen> {
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
             onPressed: () async {
-              final started = await wsService.toggleLiveLocationSharing();
+              final started = await wsService.toggleLiveLocationSharing(context);
               if (mounted) {
                 if (started) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -398,12 +402,16 @@ class _GroupLiveMapScreenState extends ConsumerState<GroupLiveMapScreen> {
     membersAsync.whenData((members) => totalMembers = members.length);
     locationsAsync.whenData((locations) => liveMembers = locations.length);
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
             // Back Button
             Container(
               decoration: BoxDecoration(
@@ -472,7 +480,7 @@ class _GroupLiveMapScreenState extends ConsumerState<GroupLiveMapScreen> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   void _showPrivacySettingsSheet(BuildContext context, WidgetRef ref, GroupWebsocketService wsService) {

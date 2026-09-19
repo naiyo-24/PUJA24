@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/permission_helper.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
@@ -39,7 +41,11 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+        if (!mounted) return;
+        permission = await PermissionHelper.requestLocationPermission(
+          context,
+          rationale: 'PUJA24 needs your location to set your home base.',
+        );
         if (permission == LocationPermission.denied) {
           throw Exception('Location permissions are denied');
         }

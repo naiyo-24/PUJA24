@@ -21,6 +21,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   Future<void> _navigate() async {
+    // Initialize the provider immediately so it starts checking the token in the background
+    ref.read(authProvider);
+    
     await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
     

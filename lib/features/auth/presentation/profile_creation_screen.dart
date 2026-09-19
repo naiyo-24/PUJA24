@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/utils/permission_helper.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'providers/auth_provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -87,97 +89,22 @@ class _ProfileCreationScreenState extends ConsumerState<ProfileCreationScreen> w
   }
 
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _profileImage = File(pickedFile.path);
-      });
-    }
-  }
-
-  // Location Methods
-  Future<void> _showLocationDisclosure() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      _fetchLocation();
-      return;
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.always || permission == LocationPermission.whileInUse || permission == LocationPermission.deniedForever) {
-      _fetchLocation();
-      return;
-    }
-
-    final bool? accept = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.pujaRed.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.my_location, color: AppColors.pujaRed, size: 40),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Use your location',
-                    style: TextStyle(color: AppColors.charcoal, fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'PUJA24 requires your location to automatically fetch your address, recommend nearby pandals, and help you navigate safely during the festivities.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.black54, fontSize: 14, height: 1.5),
-                  ),
-                  const SizedBox(height: 32),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          ),
-                          child: const Text('Not now', style: TextStyle(color: AppColors.mutedGray, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.pujaRed,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          ),
-                          child: const Text('Allow', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }
+    final permission = await PermissionHelper.requestPhotoPermission(
+      context,
+      rationale: 'PUJA24 needs access to your photos so you can choose a profile picture.',
     );
-
-    if (accept == true) {
-      _fetchLocation();
+    if (permission.isGranted || permission.isLimited) {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        setState(() {
+          _profileImage = File(pickedFile.path);
+        });
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Photos permission denied.')));
+      }
     }
   }
 
@@ -194,7 +121,11 @@ class _ProfileCreationScreenState extends ConsumerState<ProfileCreationScreen> w
 
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+        if (!mounted) return;
+        permission = await PermissionHelper.requestLocationPermission(
+          context,
+          rationale: 'PUJA24 needs your location to automatically set your home base.',
+        );
         if (permission == LocationPermission.denied) {
           throw Exception('Location permissions are denied');
         }
@@ -508,7 +439,7 @@ class _ProfileCreationScreenState extends ConsumerState<ProfileCreationScreen> w
                               )
                             : IconButton(
                                 icon: const Icon(Icons.my_location, color: AppColors.pujaRed),
-                                onPressed: _showLocationDisclosure,
+                                onPressed: _fetchLocation,
                               ),
                         validator: (value) => value == null || value.isEmpty ? 'Required' : null,
                       ),

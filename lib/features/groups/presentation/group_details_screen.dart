@@ -3,6 +3,8 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/permission_helper.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
@@ -14,6 +16,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/network/api_config.dart';
 import '../data/group_websocket_service.dart';
 import '../data/groups_api_service.dart';
+import 'widgets/itinerary_selection_sheet.dart';
 
 // Provider to fetch details for this screen
 final groupDetailsProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, groupId) async {
@@ -136,19 +139,35 @@ class _GroupDetailsScreenState extends ConsumerState<GroupDetailsScreen> {
 
   Future<void> _handleGalleryAttachment() async {
     Navigator.pop(context);
-    final picker = ImagePicker();
-    final xfile = await picker.pickImage(source: ImageSource.gallery);
-    if (xfile != null) {
-      await _cropAndSendImage(xfile.path);
+    final permission = await PermissionHelper.requestPhotoPermission(
+      context,
+      rationale: 'PUJA24 needs access to your photos to send images to your group.',
+    );
+    if (permission.isGranted || permission.isLimited) {
+      final picker = ImagePicker();
+      final xfile = await picker.pickImage(source: ImageSource.gallery);
+      if (xfile != null) {
+        await _cropAndSendImage(xfile.path);
+      }
+    } else {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Photos permission denied')));
     }
   }
 
   Future<void> _handleCameraAttachment() async {
     Navigator.pop(context);
-    final picker = ImagePicker();
-    final xfile = await picker.pickImage(source: ImageSource.camera);
-    if (xfile != null) {
-      await _cropAndSendImage(xfile.path);
+    final permission = await PermissionHelper.requestCameraPermission(
+      context,
+      rationale: 'PUJA24 needs access to your camera to capture and send photos to your group.',
+    );
+    if (permission.isGranted) {
+      final picker = ImagePicker();
+      final xfile = await picker.pickImage(source: ImageSource.camera);
+      if (xfile != null) {
+        await _cropAndSendImage(xfile.path);
+      }
+    } else {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Camera permission denied')));
     }
   }
 
@@ -182,7 +201,11 @@ class _GroupDetailsScreenState extends ConsumerState<GroupDetailsScreen> {
     Navigator.pop(context);
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+      if (!mounted) return;
+      permission = await PermissionHelper.requestLocationPermission(
+        context,
+        rationale: 'PUJA24 requires your location so you can share it with your group members in the chat.',
+      );
       if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location permission denied')));
         return;
@@ -243,6 +266,12 @@ class _GroupDetailsScreenState extends ConsumerState<GroupDetailsScreen> {
   void _handleMockAttachment(String title, String type) {
     Navigator.pop(context);
     _sendAttachmentMessage('Shared a $title', type, {});
+  }
+  
+  void _handleItineraryAttachment(List<Map<String, dynamic>> selectedPandals) {
+    _sendAttachmentMessage('Shared an itinerary', 'itinerary', {
+      'pandals': selectedPandals,
+    });
   }
 
   @override
@@ -352,8 +381,14 @@ class _GroupDetailsScreenState extends ConsumerState<GroupDetailsScreen> {
           IconButton(
             icon: const Icon(Icons.format_list_bulleted_rounded, color: AppColors.saffron),
             onPressed: () {
-              // TODO: Open Itinerary
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Itinerary coming soon!')));
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => ItinerarySelectionSheet(
+                  onItineraryShared: _handleItineraryAttachment,
+                ),
+              );
             },
             tooltip: 'Itinerary',
           ),
@@ -700,7 +735,18 @@ class _GroupDetailsScreenState extends ConsumerState<GroupDetailsScreen> {
 
   Widget _buildMessageContent(Map<String, dynamic> message, bool isMe, bool isDark) {
     final type = message['messageType'] ?? 'text';
-    final metaData = message['metaData'] as Map<String, dynamic>?;
+    
+    // Safely parse metaData whether it's a Map or a JSON String
+    var rawMeta = message['metaData'];
+    Map<String, dynamic>? metaData;
+    if (rawMeta is String) {
+      try {
+        metaData = jsonDecode(rawMeta);
+      } catch (_) {}
+    } else if (rawMeta is Map) {
+      metaData = Map<String, dynamic>.from(rawMeta);
+    }
+
     final textColor = isMe ? Colors.white : (isDark ? Colors.white : Colors.black87);
 
     if (type == 'image' && metaData != null) {
@@ -781,10 +827,71 @@ class _GroupDetailsScreenState extends ConsumerState<GroupDetailsScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.location_on, color: isMe ? Colors.white : AppColors.pujaRed),
+                Icon(Icons.location_on_rounded, color: textColor, size: 24),
                 const SizedBox(width: 8),
-                Text('Location\n$lat, $lng', style: TextStyle(fontSize: 12, color: textColor)),
+                Text('Location Pin', style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
               ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            onPressed: () {
+              // Open maps logic here
+            },
+            icon: const Icon(Icons.map_rounded, size: 16),
+            label: const Text('View on Map'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isMe ? Colors.white : AppColors.pujaRed,
+              foregroundColor: isMe ? AppColors.pujaRed : Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+          ),
+        ],
+      );
+    }
+    
+    if (type == 'itinerary' && metaData != null) {
+      final pandalsList = metaData['pandals'] as List<dynamic>? ?? [];
+      
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.map_outlined, color: textColor, size: 24),
+              const SizedBox(width: 8),
+              Text('Pandal Itinerary', style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 16)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isMe ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: pandalsList.map((p) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle_outline, size: 16, color: textColor),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          p['name'] ?? 'Unknown Pandal',
+                          style: TextStyle(color: textColor, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
             ),
           ),
         ],

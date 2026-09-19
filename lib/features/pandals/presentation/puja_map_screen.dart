@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -10,6 +11,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/utils/permission_helper.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/network/route_service.dart';
@@ -242,7 +244,11 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
 
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+        if (!mounted) return;
+        permission = await PermissionHelper.requestLocationPermission(
+          context,
+          rationale: 'PUJA24 requires your location to recommend nearby pandals and help you navigate safely on the map.',
+        );
         if (permission == LocationPermission.denied) {
           if (mounted) setState(() => _isLoadingLocation = false);
           return;
@@ -254,11 +260,31 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
         return;
       }
 
-      // Get initial position first to center the map quickly
-      Position initialPosition = await Geolocator.getCurrentPosition();
-      if (mounted) {
+      Position? initialPosition;
+      try {
+        // Get initial position first to center the map quickly
+        initialPosition = await Geolocator.getCurrentPosition(
+          timeLimit: const Duration(seconds: 3),
+        );
+      } catch (e) {
+        // Fallback to Kolkata for iOS Simulators that don't have GPS
+        initialPosition = Position(
+          longitude: 88.3639,
+          latitude: 22.5726,
+          timestamp: DateTime.now(),
+          accuracy: 100,
+          altitude: 0,
+          altitudeAccuracy: 0,
+          heading: 0,
+          headingAccuracy: 0,
+          speed: 0,
+          speedAccuracy: 0,
+        );
+      }
+
+      if (mounted && initialPosition != null) {
         setState(() {
-          _userLocation = LatLng(initialPosition.latitude, initialPosition.longitude);
+          _userLocation = LatLng(initialPosition!.latitude, initialPosition!.longitude);
           _isLoadingLocation = false;
         });
         _recenter();
@@ -934,20 +960,41 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
               child: Column(
                 children: [
                   // Search Bar
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                  Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: TextField(
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.deepMaroon, size: 20),
+                          onPressed: () => context.go('/explore'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
                         hintText: 'Search pandals, metro, toilets',
@@ -978,6 +1025,9 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
                       onChanged: _onSearchChanged,
                     ),
                   ),
+                ),
+              ],
+            ),
                   
                   // Search Results Dropdown
                   if (_searchResults.isNotEmpty)

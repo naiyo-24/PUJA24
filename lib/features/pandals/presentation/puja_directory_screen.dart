@@ -6,6 +6,9 @@ import '../../../core/theme/app_typography.dart';
 import 'providers/puja_list_provider.dart';
 import '../domain/models/puja_detail_model.dart';
 import 'widgets/pandal_card_skeleton.dart';
+import '../../../core/utils/permission_helper.dart';
+import '../../../../core/widgets/native_ad_widget.dart';
+import '../../../../core/widgets/banner_ad_widget.dart';
 
 class PujaDirectoryScreen extends ConsumerStatefulWidget {
   const PujaDirectoryScreen({super.key});
@@ -18,7 +21,7 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   String _selectedFilter = 'All';
-
+  
   @override
   void dispose() {
     _searchController.dispose();
@@ -43,13 +46,17 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                   _buildFilterChips(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 8),
+                  const BannerAdWidget(key: ValueKey('banner_ad_top')),
+                  const SizedBox(height: 16),
                   _buildQuickStats(theme),
                   const SizedBox(height: 32),
                   _buildSectionHeader(theme, _selectedFilter == 'All' ? '🔥 Popular Pujas' : '🔥 ${_selectedFilter} Pujas', 'View All'),
                   const SizedBox(height: 16),
                   _buildPopularPujasRow(context),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
+                  const BannerAdWidget(key: ValueKey('banner_ad_mid')),
+                  const SizedBox(height: 24),
                   _buildSectionHeader(theme, '📍 Explore by Area', 'View All'),
                   const SizedBox(height: 16),
                   _buildAreaRow(context, theme),
@@ -70,7 +77,7 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
     return SliverPersistentHeader(
       pinned: false, // Don't pin the header, let it scroll away smoothly
       delegate: _HeroHeaderDelegate(
-        expandedHeight: 340.0,
+        expandedHeight: 380.0,
         searchController: _searchController,
       ),
     );
@@ -461,14 +468,32 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
               child: Text('No nearby pandals found.', style: TextStyle(color: Colors.grey)),
             );
           }
-          return Column(
-            children: pandals.map((p) {
-              return Padding(
+          List<Widget> children = [];
+          int currentInterval = 1;
+          int countSinceLastAd = 0;
+          for (int i = 0; i < pandals.length; i++) {
+            children.add(
+              Padding(
                 padding: const EdgeInsets.only(bottom: 16),
-                child: _buildNearbyListTile(p),
+                child: _buildNearbyListTile(pandals[i]),
+              )
+            );
+            countSinceLastAd++;
+            
+            // Should we insert an ad?
+            if (countSinceLastAd >= currentInterval && i != pandals.length - 1) {
+              children.add(
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: BannerAdWidget(key: ValueKey('banner_ad_$i')),
+                )
               );
-            }).toList(),
-          );
+              countSinceLastAd = 0;
+              // Change interval to be dynamic: 1, 2, 4, 3, etc.
+              currentInterval = (currentInterval * 2) % 5 + 1;
+            }
+          }
+          return Column(children: children);
         },
         loading: () => ListView.builder(
           shrinkWrap: true,
@@ -485,12 +510,31 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
         ),
         error: (error, stackTrace) => Padding(
           padding: const EdgeInsets.all(24.0),
-          child: Text(
-            error.toString().contains('permission') 
-              ? 'Location permission is required to view nearby pandals.'
-              : 'Error fetching location: \$error',
-            style: const TextStyle(color: Colors.red),
-            textAlign: TextAlign.center,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                error.toString().contains('permission') 
+                  ? 'Location permission is required to view nearby pandals.'
+                  : 'Error fetching location: \$error',
+                style: const TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+              if (error.toString().contains('permission')) ...[
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () async {
+                    await PermissionHelper.requestLocationPermission(
+                      context,
+                      rationale: 'PUJA24 requires your location to recommend nearby pandals and help you navigate safely.',
+                    );
+                    // Refresh the provider
+                    ref.invalidate(nearbyPandalsProvider);
+                  },
+                  child: const Text('Enable Location'),
+                ),
+              ],
+            ],
           ),
         ),
       ),
@@ -673,7 +717,7 @@ class _HeroHeaderDelegate extends SliverPersistentHeaderDelegate {
           Positioned(
             left: 24,
             right: 24,
-            bottom: 145 + (progress * 80), // Translates upward smoothly while fading
+            bottom: 110 + (progress * 80), // Translates upward smoothly while fading
             child: Opacity(
               opacity: textOpacity,
               child: Column(
@@ -708,6 +752,22 @@ class _HeroHeaderDelegate extends SliverPersistentHeaderDelegate {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ),
+          
+          // Floating Back Button for iOS
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            left: 16,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.3),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+                onPressed: () => context.go('/explore'),
               ),
             ),
           ),

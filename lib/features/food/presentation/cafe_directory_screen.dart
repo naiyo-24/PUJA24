@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/utils/permission_helper.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -52,7 +53,11 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
 
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+        if (!mounted) return;
+        permission = await PermissionHelper.requestLocationPermission(
+          context,
+          rationale: 'PUJA24 requires your location to recommend nearby cafes and restaurants.',
+        );
         if (permission == LocationPermission.denied) {
           if (mounted) setState(() => _isLoadingLocation = false);
           return;
@@ -66,6 +71,7 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
 
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 5),
       );
       if (mounted) {
         setState(() {
@@ -151,6 +157,27 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
                       'assets/images/cafe.png', 
                       fit: BoxFit.cover,
                       alignment: Alignment.topCenter,
+                    ),
+                  ),
+                  Positioned(
+                    top: MediaQuery.of(context).padding.top + 8,
+                    left: 16,
+                    child: GestureDetector(
+                      onTap: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.go('/');
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                      ),
                     ),
                   ),
                   Positioned(

@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/utils/permission_helper.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:battery_plus/battery_plus.dart';
+import 'package:flutter/material.dart';
 import '../../../core/network/api_config.dart';
 import '../../../core/services/background_location_service.dart';
 
@@ -134,15 +136,18 @@ class GroupWebsocketService {
 
     // 1. Fetch historical messages first
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/api/groups/$groupId/messages'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+      final dio = Dio();
+      final response = await dio.get(
+        '${ApiConfig.baseUrl}/api/groups/$groupId/messages',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
       );
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = response.data;
         if (data is List) {
           for (var msg in data) {
             String timeStr = 'Just now';
@@ -153,16 +158,23 @@ class GroupWebsocketService {
                 timeStr = _formatTime(msgDate);
               } catch (_) {}
             }
-            _messages.add({
-              'id': msg['id'] ?? '',
-              'text': msg['content'] ?? '',
-              'senderId': msg['sender_id'] ?? '',
-              'senderName': msg['sender_name'] ?? 'Unknown',
-              'time': timeStr,
-              'timestamp': msgDate ?? DateTime.now(),
-              'isMe': msg['sender_id'] == _userId,
-              'messageType': (msg['message_type'] ?? 'text').toString().split('.').last.toLowerCase(),
-              'metaData': msg['meta_data'],
+              var metaData = msg['meta_data'];
+              if (metaData is String && metaData.isNotEmpty) {
+                try {
+                  metaData = jsonDecode(metaData);
+                } catch (_) {}
+              }
+
+              _messages.add({
+                'id': msg['id'] ?? '',
+                'text': msg['content'] ?? '',
+                'senderId': msg['sender_id'] ?? '',
+                'senderName': msg['sender_name'] ?? 'Unknown',
+                'time': timeStr,
+                'timestamp': msgDate ?? DateTime.now(),
+                'isMe': msg['sender_id'] == _userId,
+                'messageType': (msg['message_type'] ?? 'text').toString().split('.').last.toLowerCase(),
+                'metaData': metaData,
             });
           }
           _controller.add(List.from(_messages));
@@ -192,7 +204,13 @@ class GroupWebsocketService {
               // Check if we already have this message (from optimistic update)
               final isMe = senderId == _userId;
               final msgType = (data['message_type'] ?? 'text').toString().split('.').last.toLowerCase();
-              final metaData = data['meta_data'];
+              var metaData = data['meta_data'];
+              if (metaData is String && metaData.isNotEmpty) {
+                try {
+                  metaData = jsonDecode(metaData);
+                } catch (_) {}
+              }
+
               final existingIndex = _messages.indexWhere((m) => 
                 m['isMe'] == true && m['text'] == content && m['messageType'] == msgType &&
                 (DateTime.now().millisecondsSinceEpoch - (int.tryParse(m['id'].toString()) ?? 0)) < 5000
@@ -307,12 +325,12 @@ class GroupWebsocketService {
   }
 
   // Live Location Methods
-  Future<bool> toggleLiveLocationSharing() async {
+  Future<bool> toggleLiveLocationSharing(BuildContext context) async {
     if (_isSharingLocation) {
       stopLiveLocationSharing();
       return false;
     } else {
-      return await startLiveLocationSharing();
+      return await startLiveLocationSharing(context);
     }
   }
 
@@ -329,10 +347,13 @@ class GroupWebsocketService {
     shareDurationString = str;
   }
 
-  Future<bool> startLiveLocationSharing() async {
+  Future<bool> startLiveLocationSharing(BuildContext context) async {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+      permission = await PermissionHelper.requestLocationPermission(
+        context,
+        rationale: 'PUJA24 requires background location tracking so your group can see your live location while pandal hopping.',
+      );
       if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
         return false; // Permission denied
       }
@@ -481,10 +502,11 @@ class GroupWebsocketService {
       final dest = '${targetLoc['lat']},${targetLoc['lng']}';
       
       final url = 'https://maps.googleapis.com/maps/api/directions/json?origin=$origin&destination=$dest&key=${ApiConfig.googleMapsApiKey}';
-      final response = await http.get(Uri.parse(url));
+      final dio = Dio();
+      final response = await dio.get(url);
       
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = response.data;
         if (data['status'] == 'OK' && data['routes'].isNotEmpty) {
           final points = data['routes'][0]['overview_polyline']['points'];
           final decodedPoints = _decodePolyline(points);

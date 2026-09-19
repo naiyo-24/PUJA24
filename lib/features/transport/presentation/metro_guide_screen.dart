@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/permission_helper.dart';
 import '../domain/metro_data.dart';
 import '../../../../core/services/places_api_service.dart';
 
@@ -40,9 +41,13 @@ class _MetroGuideScreenState extends State<MetroGuideScreen> {
       
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+        if (!mounted) return;
+        permission = await PermissionHelper.requestLocationPermission(
+          context,
+          rationale: 'PUJA24 requires your location to find the nearest Metro stations to you.',
+        );
         if (permission == LocationPermission.denied) {
-          setState(() => _isLoading = false);
+          if (mounted) setState(() => _isLoading = false);
           return;
         }
       }

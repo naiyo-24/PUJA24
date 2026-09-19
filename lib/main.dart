@@ -7,6 +7,7 @@ import 'routes/app_router.dart';
 import 'core/services/background_location_service.dart';
 
 import 'package:flutter/services.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +18,9 @@ void main() async {
   
   await Firebase.initializeApp();
   await dotenv.load(fileName: ".env");
+  
+  // Initialize Google Mobile Ads
+  await MobileAds.instance.initialize();
   
   try {
     await BackgroundLocationService().initialize();

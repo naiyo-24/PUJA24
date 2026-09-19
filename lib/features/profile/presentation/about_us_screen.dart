@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/native_ad_widget.dart';
 
 class AboutUsScreen extends StatelessWidget {
   const AboutUsScreen({super.key});
@@ -210,7 +211,10 @@ class AboutUsScreen extends StatelessWidget {
                     onTap: () => _launchUrl(context, 'https://naiyo24.com'),
                   ).animate().fade(delay: 1000.ms).slideX(begin: 0.1),
                   
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 32),
+                  const NativeAdWidget(height: 320),
+                  const SizedBox(height: 32),
+                  
                   Center(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,

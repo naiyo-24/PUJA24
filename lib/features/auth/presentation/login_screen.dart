@@ -77,32 +77,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             AnimatedContainer(
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeOut,
-                              height: absoluteScreenHeight * 0.55,
+                              height: absoluteScreenHeight * 0.42, // Shifted up to center inside the red arch
                             ),
                             
                             // Logo always visible but shrinks slightly
                             AnimatedContainer(
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeOut,
-                              height: 90,
+                              height: 110, // Made logo slightly larger
                               child: Image.asset(
                                 'assets/logo.png',
                                 errorBuilder: (context, error, stackTrace) => 
                                   Text('PUJA24', style: theme.textTheme.displayMedium?.copyWith(color: AppColors.antiqueGold)),
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 12),
                             
                             Text(
                               'Welcome Back!',
-                              style: theme.textTheme.displaySmall?.copyWith(color: AppColors.ivory, fontSize: 24),
+                              style: theme.textTheme.displaySmall?.copyWith(color: AppColors.ivory, fontSize: 26, fontWeight: FontWeight.bold),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 8),
                             Text(
                               'Sign in to continue your spiritual journey',
-                              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.mutedGray, fontSize: 12),
+                              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.ivory.withOpacity(0.8), fontSize: 13),
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 32),
                             
                             // Google Login Button
                               SizedBox(

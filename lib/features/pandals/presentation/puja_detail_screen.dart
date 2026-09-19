@@ -14,6 +14,7 @@ import '../domain/models/puja_detail_model.dart';
 import 'widgets/puja_detail_skeleton.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../../../core/widgets/native_ad_widget.dart';
 import 'package:go_router/go_router.dart';
 import 'puja_map_screen.dart';
 
@@ -50,8 +51,16 @@ class _PujaDetailScreenState extends ConsumerState<PujaDetailScreen> {
                   _buildDivider(),
                   PujaNearbyPlaces(puja: puja),
                   _buildDivider(),
+                  _buildDivider(),
                   PujaTransit(puja: puja),
                   _buildDivider(),
+                  
+                  // Native Ad Integration on Detail Screen
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+                    child: NativeAdWidget(height: 380),
+                  ),
+
                   // More sections will go here
                   const SizedBox(height: 100), // padding for bottom bar
                 ],

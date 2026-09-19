@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../home/presentation/providers/pass_provider.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
+import '../../../core/widgets/native_ad_widget.dart';
 
 class MyPassesScreen extends ConsumerWidget {
   const MyPassesScreen({super.key});
@@ -45,6 +46,8 @@ class MyPassesScreen extends ConsumerWidget {
                   const Text('No Passes Found', style: TextStyle(color: Colors.white, fontSize: 18)),
                   const SizedBox(height: 8),
                   Text('You haven\'t purchased any passes yet.', style: TextStyle(color: Colors.white.withOpacity(0.6))),
+                  const SizedBox(height: 48),
+                  const NativeAdWidget(height: 320),
                 ],
               ),
             );
@@ -59,9 +62,12 @@ class MyPassesScreen extends ConsumerWidget {
             child: ListView.separated(
               padding: const EdgeInsets.all(24.0),
               physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: vouchers.length,
+              itemCount: vouchers.length + 1,
               separatorBuilder: (context, index) => const SizedBox(height: 24),
               itemBuilder: (context, index) {
+                if (index == vouchers.length) {
+                  return const NativeAdWidget(height: 320);
+                }
                 final voucher = vouchers[index];
                 final isRedeemed = voucher.status.toLowerCase() == 'redeemed';
 

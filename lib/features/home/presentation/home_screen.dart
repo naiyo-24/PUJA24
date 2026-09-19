@@ -15,6 +15,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:play_install_referrer/play_install_referrer.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/banner_ad_widget.dart';
 import '../../pandals/presentation/providers/puja_list_provider.dart';
 import '../../pandals/presentation/widgets/pandal_card_skeleton.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
@@ -254,6 +255,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+              
+
+
 
               // Categories
               SingleChildScrollView(
@@ -448,6 +452,63 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+              const BannerAdWidget(),
+              const SizedBox(height: 16),
+              
+              // Earn Rewards Card
+              GestureDetector(
+                onTap: () => context.push('/rewards'),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFFE53935), Color(0xFF8E0000)],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFE53935).withOpacity(0.3),
+                        blurRadius: 15,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.play_circle_filled_rounded, color: Colors.white, size: 32),
+                      ),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Earn Free Points',
+                              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Watch short videos to earn points for your Puja Pass!',
+                              style: TextStyle(color: Colors.white70, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 24),
 
               // Explore Near You
@@ -492,6 +553,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 error: (err, stack) => Center(child: Text('Error: $err', style: const TextStyle(color: Colors.red))),
               ),
+              const SizedBox(height: 24),
+              const BannerAdWidget(),
               const SizedBox(height: 24),
 
               // Timetable (দুর্গাপুজো ২০২৬ নির্ঘণ্ট)
@@ -630,6 +693,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 error: (_, __) => const SizedBox.shrink(),
               ),
               const SizedBox(height: 24),
+              const BannerAdWidget(),
+              const SizedBox(height: 24),
 
               // Quick Actions
               Container(
@@ -648,7 +713,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
-              const SizedBox(height: 100), // Padding to allow scrolling past the floating navbar
+              const SizedBox(height: 140), // Padding to allow scrolling past the floating navbar
             ],
           ),
         ),

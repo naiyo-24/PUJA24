@@ -8,7 +8,7 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import '../network/api_config.dart';
 
 @pragma('vm:entry-point')
@@ -53,17 +53,20 @@ void onStart(ServiceInstance service) async {
     try {
       final pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
       
+      final dio = Dio();
       for (String groupId in activeGroupIdsStr) {
-        await http.post(
-          Uri.parse('${ApiConfig.baseUrl}/api/groups/$groupId/location'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-          body: jsonEncode({
+        await dio.post(
+          '${ApiConfig.baseUrl}/api/groups/$groupId/location',
+          options: Options(
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $token',
+            },
+          ),
+          data: {
             'latitude': pos.latitude,
             'longitude': pos.longitude,
-          }),
+          },
         );
       }
     } catch (e) {

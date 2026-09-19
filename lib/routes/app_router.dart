@@ -37,7 +37,8 @@ import '../features/groups/presentation/group_live_map_screen.dart';
 import '../shell/app_shell.dart';
 import '../core/theme/app_colors.dart';
 import '../features/advertisement/presentation/advertisement_details_screen.dart';
-
+import '../features/rewards/presentation/rewards_screen.dart';
+import '../features/rewards/presentation/redeemed_pass_screen.dart';
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -176,6 +177,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/advertisement',
         name: 'advertisement',
         builder: (context, state) => const AdvertisementDetailsScreen(),
+      ),
+      GoRoute(
+        path: '/rewards',
+        name: 'rewards',
+        builder: (context, state) => const RewardsScreen(),
+        routes: [
+          GoRoute(
+            path: 'pass/:passId',
+            name: 'redeemedPass',
+            builder: (context, state) {
+              final passId = state.pathParameters['passId']!;
+              return RedeemedPassScreen(passId: passId);
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: '/groups/live-map/:id',

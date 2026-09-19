@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
 import '../data/groups_api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/widgets/banner_ad_widget.dart';
 
 class GroupsDashboardScreen extends ConsumerStatefulWidget {
   const GroupsDashboardScreen({super.key});
@@ -138,17 +139,27 @@ class _GroupsDashboardScreenState extends ConsumerState<GroupsDashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 8.0),
-                child: Text(
-                  'My Groups',
-                  style: GoogleFonts.playfairDisplay(
-                    textStyle: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
+                padding: const EdgeInsets.only(left: 12.0, right: 20.0, top: 16.0, bottom: 8.0),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new, size: 22),
                       color: isDark ? Colors.white : Colors.black87,
+                      onPressed: () => context.go('/explore'),
                     ),
-                  ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'My Groups',
+                      style: GoogleFonts.playfairDisplay(
+                        textStyle: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Expanded(
@@ -163,6 +174,12 @@ class _GroupsDashboardScreenState extends ConsumerState<GroupsDashboardScreen> {
                   child: CustomScrollView(
                     physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
           slivers: [
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: BannerAdWidget(key: ValueKey('banner_ad_groups')),
+              ),
+            ),
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8).copyWith(bottom: 120),
             sliver: Consumer(

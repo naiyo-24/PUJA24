@@ -1,0 +1,9 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -workspace Runner.xcworkspace -scheme Runner -showBuildSettings
+
+Resolve Package Graph
+The file “workspace-state.json” couldn’t be opened because you don’t have permission to view it.
+
+Resolved source packages:
+  FlutterGeneratedPluginSwiftPackage: (null)
+

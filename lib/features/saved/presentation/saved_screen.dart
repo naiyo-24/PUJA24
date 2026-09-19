@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../food/domain/models/restaurant_model.dart';
 import '../../pandals/domain/models/puja_detail_model.dart';
+import '../../pandals/presentation/providers/save_pandal_provider.dart';
 import 'providers/saved_provider.dart';
 
 class SavedScreen extends ConsumerStatefulWidget {
@@ -31,55 +32,36 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
         slivers: [
           // ── Header ──────────────────────────────────────────────────────
           SliverAppBar(
-            expandedHeight: 180.0,
-            floating: false,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+              onPressed: () => context.go('/explore'),
+            ),
+            titleSpacing: 0,
+            toolbarHeight: 80.0,
+            title: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Saved Places',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: 'PlayfairDisplay',
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                Text(
+                  'Your favorite pandals and restaurants.',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+            floating: true,
             pinned: true,
-            toolbarHeight: 0,
             backgroundColor: bgColor,
             elevation: 0,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  ShaderMask(
-                    shaderCallback: (rect) {
-                      return LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [Colors.black.withOpacity(0.6), bgColor],
-                        stops: const [0.3, 1.0],
-                      ).createShader(rect);
-                    },
-                    blendMode: BlendMode.darken,
-                    child: Container(color: const Color(0xFF1A0F05)), // Subtle dark background
-                  ),
-                  const Positioned(
-                    bottom: 74,
-                    left: 20,
-                    right: 20,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Saved Places',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 32,
-                            fontWeight: FontWeight.w900,
-                            fontFamily: 'PlayfairDisplay',
-                          ),
-                        ),
-                        SizedBox(height: 6),
-                        Text(
-                          'Your favorite pandals and restaurants.',
-                          style: TextStyle(color: Colors.white70, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(60.0),
               child: Container(
@@ -170,7 +152,7 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final item = items[index];
-                      return _buildSavedCard(item, goldColor);
+                      return _buildSavedCard(item, goldColor, ref);
                     },
                     childCount: items.length,
                   ),
@@ -191,131 +173,214 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
     );
   }
 
-  Widget _buildSavedCard(PujaDetailModel item, Color goldColor) {
-    return GestureDetector(
-      onTap: () {
-        if (item.type.toLowerCase() == 'restaurant' || item.type.toLowerCase() == 'cafe') {
-          final restaurant = RestaurantModel(
-            id: item.id,
-            name: item.name,
-            cuisine: 'Food & Cafe',
-            rating: item.rating,
-            distance: item.distance,
-            priceRange: '₹₹',
-            imageUrl: item.imageUrl,
-            isPujaSpecial: false,
-            latitude: item.latitude,
-            longitude: item.longitude,
-            area: item.area,
-            contactPhone: '',
-            about: '',
-            topDishes: [],
-            totalReviews: 0,
-            timings: '24/7',
-          );
-          context.push('/restaurant_detail/${item.id}', extra: restaurant);
-        } else {
-          context.push('/puja_detail/${item.id}');
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
+  Widget _buildSavedCard(PujaDetailModel item, Color goldColor, WidgetRef ref) {
+    return Dismissible(
+      key: Key(item.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 20),
         decoration: BoxDecoration(
-          color: const Color(0xFF141414),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: goldColor.withOpacity(0.2)),
+          color: Colors.red.shade600,
+          borderRadius: BorderRadius.circular(24),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image
-            ClipRRect(
-              borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
-              child: item.imageUrl.startsWith('http')
-                  ? Image.network(
-                      item.imageUrl,
-                      width: 100,
-                      height: 120, // Fixed height
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        width: 100,
-                        height: 120,
-                        color: const Color(0xFF2A2A2A),
-                        child: const Icon(Icons.image, color: Colors.white54),
-                      ),
-                    )
-                  : Container(
-                      width: 100,
-                      height: 120,
-                      color: const Color(0xFF2A2A2A),
-                      child: const Icon(Icons.image, color: Colors.white54),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: const Icon(Icons.delete_sweep_rounded, color: Colors.white, size: 36),
+      ),
+      onDismissed: (direction) {
+        ref.read(savedPandalIdsProvider.notifier).toggleSave(item.id);
+      },
+      child: GestureDetector(
+        onTap: () {
+          if (item.type.toLowerCase() == 'restaurant' || item.type.toLowerCase() == 'cafe') {
+            final restaurant = RestaurantModel(
+              id: item.id,
+              name: item.name,
+              cuisine: 'Food & Cafe',
+              rating: item.rating,
+              distance: item.distance,
+              priceRange: '₹₹',
+              imageUrl: item.imageUrl,
+              isPujaSpecial: false,
+              latitude: item.latitude,
+              longitude: item.longitude,
+              area: item.area,
+              contactPhone: '',
+              about: '',
+              topDishes: [],
+              totalReviews: 0,
+              timings: '24/7',
+            );
+            context.push('/restaurant_detail/${item.id}', extra: restaurant);
+          } else {
+            context.push('/puja_detail/${item.id}');
+          }
+        },
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 20),
+          height: 200,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: goldColor.withOpacity(0.3), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: goldColor.withOpacity(0.15),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Background Image or Vibrant Placeholder
+                item.imageUrl.startsWith('http')
+                    ? Image.network(
+                        item.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
+                      )
+                    : _buildPlaceholder(),
+
+                // Cinematic Gradient Overlay
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.black.withOpacity(0.1),
+                        Colors.black.withOpacity(0.7),
+                        Colors.black.withOpacity(0.95),
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: const [0.0, 0.5, 1.0],
                     ),
-            ),
-            // Details
-            Expanded(
-              child: SizedBox(
-                height: 120, // Match image height
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  ),
+                ),
+
+                // Content Overlay
+                Padding(
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      // Top Row (Heart Icon)
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item.name,
-                                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  item.area,
-                                  style: const TextStyle(color: Colors.white70, fontSize: 12),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.white.withOpacity(0.3)),
+                            ),
+                            child: Text(
+                              item.type.toUpperCase(),
+                              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1),
                             ),
                           ),
-                          const Icon(Icons.favorite, color: Colors.redAccent, size: 20),
+                          GestureDetector(
+                            onTap: () {
+                              ref.read(savedPandalIdsProvider.notifier).toggleSave(item.id);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.5),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white.withOpacity(0.2)),
+                              ),
+                              child: const Icon(Icons.favorite, color: Colors.redAccent, size: 20),
+                            ),
+                          ),
                         ],
                       ),
+                      const Spacer(),
+                      
+                      // Title & Area
+                      Text(
+                        item.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
                       Row(
                         children: [
-                          Row(
-                            children: [
-                              Icon(Icons.location_on, color: goldColor, size: 14),
-                              const SizedBox(width: 4),
-                              Text('${item.distance} km', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                            ],
-                          ),
-                          if (double.tryParse(item.rating) != null && double.parse(item.rating) > 0) ...[
-                            const SizedBox(width: 12),
-                            Row(
-                              children: [
-                                const Icon(Icons.star, color: Colors.amber, size: 14),
-                                const SizedBox(width: 4),
-                                Text(item.rating, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                              ],
+                          Icon(Icons.location_on, color: goldColor, size: 14),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              item.area,
+                              style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      
+                      // Bottom Row: Stats
+                      Row(
+                        children: [
+                          _buildStatPill(Icons.directions_walk, '${item.distance ?? 0.0} km', goldColor, Colors.white.withOpacity(0.1)),
+                          if (double.tryParse(item.rating) != null && double.parse(item.rating) > 0) ...[
+                            const SizedBox(width: 8),
+                            _buildStatPill(Icons.star, item.rating, Colors.amber, Colors.amber.withOpacity(0.15)),
                           ],
                         ],
                       ),
                     ],
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)], // Vibrant Purple/Deep Blue
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: Icon(Icons.image, color: Colors.white.withOpacity(0.2), size: 60),
+      ),
+    );
+  }
+
+  Widget _buildStatPill(IconData icon, String text, Color iconColor, Color bgColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        // Subtle blur for glassmorphism
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: iconColor, size: 14),
+          const SizedBox(width: 4),
+          Text(text, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+        ],
       ),
     );
   }

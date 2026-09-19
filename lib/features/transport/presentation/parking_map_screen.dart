@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../../core/utils/permission_helper.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/services/places_api_service.dart';
@@ -37,7 +38,11 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
 
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+        if (!mounted) return;
+        permission = await PermissionHelper.requestLocationPermission(
+          context,
+          rationale: 'PUJA24 requires your location to show you nearby parking zones.',
+        );
         if (permission == LocationPermission.denied) {
           if (mounted) setState(() => _isLoading = false);
           return;

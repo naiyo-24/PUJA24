@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
+import 'dart:convert';
 import '../../../../core/network/api_config.dart';
 
 // User Model
@@ -62,10 +63,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> _checkToken() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    if (token != null) {
-      // For now, assuming logged in if token exists. 
-      // Ideally, fetch user profile from backend to verify.
-      state = Authenticated(UserModel(id: '', email: '', fullName: 'User'), token, false);
+    final userDataStr = prefs.getString('user_data');
+    if (token != null && userDataStr != null) {
+      try {
+        final userData = jsonDecode(userDataStr);
+        state = Authenticated(UserModel.fromJson(userData), token, false);
+      } catch (e) {
+        state = const Unauthenticated();
+      }
     } else {
       state = const Unauthenticated();
     }
@@ -101,6 +106,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final data = response.data;
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('jwt_token', data['access_token']);
+        await prefs.setString('user_data', jsonEncode(data['user']));
         
         state = Authenticated(
           UserModel.fromJson(data['user']),
@@ -141,7 +147,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
           options: Options(headers: {'Authorization': 'Bearer ${authState.token}'})
         );
         
-        state = Authenticated(UserModel.fromJson(response.data['user']), authState.token, false);
+        final updatedUser = UserModel.fromJson(response.data['user']);
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_data', jsonEncode(response.data['user']));
+        
+        state = Authenticated(updatedUser, authState.token, false);
       } catch (e) {
          print("Error updating profile: $e");
       }
@@ -177,6 +188,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('jwt_token');
+    await prefs.remove('user_data');
     state = const Unauthenticated();
   }
 }

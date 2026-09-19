@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'api_config.dart';
 
@@ -41,10 +41,11 @@ class RouteService {
     final url = 'https://maps.googleapis.com/maps/api/directions/json?origin=$origin&destination=$dest&key=$apiKey';
 
     try {
-      final response = await http.get(Uri.parse(url));
+      final dio = Dio();
+      final response = await dio.get(url);
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = response.data is String ? json.decode(response.data) : response.data;
         
         if (data['status'] == 'OK' && data['routes'] != null && data['routes'].isNotEmpty) {
           final route = data['routes'][0];

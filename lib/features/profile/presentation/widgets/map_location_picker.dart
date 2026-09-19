@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../../../core/utils/permission_helper.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -35,12 +36,18 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+        if (!mounted) return;
+        permission = await PermissionHelper.requestLocationPermission(
+          context,
+          rationale: 'PUJA24 needs your location to set your address.',
+        );
         if (permission == LocationPermission.denied) {
-          setState(() {
-            _address = 'Location permission denied';
-            _isLoading = false;
-          });
+          if (mounted) {
+            setState(() {
+              _address = 'Location permission denied';
+              _isLoading = false;
+            });
+          }
           return;
         }
       }
@@ -53,7 +60,9 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
         return;
       }
 
-      Position position = await Geolocator.getCurrentPosition();
+      Position position = await Geolocator.getCurrentPosition(
+        timeLimit: const Duration(seconds: 5),
+      );
       final latLng = LatLng(position.latitude, position.longitude);
       
       _mapController?.animateCamera(CameraUpdate.newLatLngZoom(latLng, 15.0));

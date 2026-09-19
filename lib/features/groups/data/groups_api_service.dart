@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/network/api_config.dart';
@@ -15,6 +15,8 @@ final myGroupsProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>(
 });
 
 class GroupsApiService {
+  final Dio _dio = Dio();
+
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('jwt_token');
@@ -22,21 +24,40 @@ class GroupsApiService {
 
   Future<List<Map<String, dynamic>>> fetchMyGroups() async {
     final token = await _getToken();
-    if (token == null) return [];
+    if (token == null) {
+      print('fetchMyGroups: token is null');
+      return [];
+    }
 
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/api/groups/my-groups'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+      print('fetchMyGroups: fetching from ${ApiConfig.baseUrl}/api/groups/my-groups');
+      final response = await _dio.get(
+        '${ApiConfig.baseUrl}/api/groups/my-groups',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
       );
 
+      print('fetchMyGroups: status code: ${response.statusCode}');
+      print('fetchMyGroups: response body: ${response.data}');
+
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = response.data is String ? jsonDecode(response.data) : response.data;
         if (data is List) {
-          return List<Map<String, dynamic>>.from(data);
+          final groups = List<Map<String, dynamic>>.from(data);
+          // Fetch actual member count for each group
+          for (var i = 0; i < groups.length; i++) {
+            try {
+              final members = await fetchGroupMembers(groups[i]['id']);
+              groups[i]['member_count'] = members.length;
+            } catch (_) {
+              groups[i]['member_count'] = 1; // Fallback
+            }
+          }
+          return groups;
         }
         return [];
       }
@@ -52,20 +73,24 @@ class GroupsApiService {
     if (token == null) return null;
 
     try {
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('${ApiConfig.baseUrl}/api/uploads/chat_file'),
-      );
-      request.headers['Authorization'] = 'Bearer $token';
-      request.files.add(await http.MultipartFile.fromPath('file', filePath));
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(filePath),
+      });
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+      final response = await _dio.post(
+        '${ApiConfig.baseUrl}/api/uploads/chat_file',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        return response.data is String ? jsonDecode(response.data) : response.data;
       } else {
-        print('Upload failed: ${response.statusCode} - ${response.body}');
+        print('Upload failed: ${response.statusCode} - ${response.data}');
       }
     } catch (e) {
       print('Error uploading chat file: $e');
@@ -86,19 +111,20 @@ class GroupsApiService {
         });
       }
 
-      // JSON request (multipart not yet supported by backend schema)
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/api/groups/create'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
+      final response = await _dio.post(
+        '${ApiConfig.baseUrl}/api/groups/create',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+        data: {
           'name': name,
           'picture_url': encodedPictureUrl,
-        }),
+        },
       );
-      print('Create group response: ${response.statusCode} - ${response.body}');
+      print('Create group response: ${response.statusCode} - ${response.data}');
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       print('Error creating group: $e');
@@ -111,15 +137,17 @@ class GroupsApiService {
     if (token == null) return false;
 
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/api/groups/join'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({'join_code': inviteCode}),
+      final response = await _dio.post(
+        '${ApiConfig.baseUrl}/api/groups/join',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+        data: {'join_code': inviteCode},
       );
-      print('Join group response: ${response.statusCode} - ${response.body}');
+      print('Join group response: ${response.statusCode} - ${response.data}');
       return response.statusCode == 200;
     } catch (e) {
       print('Error joining group: $e');
@@ -132,15 +160,17 @@ class GroupsApiService {
     if (token == null) return null;
 
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/api/groups/$groupId'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+      final response = await _dio.get(
+        '${ApiConfig.baseUrl}/api/groups/$groupId',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
       );
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        return response.data is String ? jsonDecode(response.data) : response.data;
       }
     } catch (e) {
       print('Error fetching group details: $e');
@@ -153,15 +183,17 @@ class GroupsApiService {
     if (token == null) return [];
 
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/api/groups/$groupId/members'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+      final response = await _dio.get(
+        '${ApiConfig.baseUrl}/api/groups/$groupId/members',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
       );
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = response.data is String ? jsonDecode(response.data) : response.data;
         if (data is List) return List<Map<String, dynamic>>.from(data);
       }
     } catch (e) {
@@ -175,15 +207,17 @@ class GroupsApiService {
     if (token == null) return [];
 
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/api/groups/$groupId/messages'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+      final response = await _dio.get(
+        '${ApiConfig.baseUrl}/api/groups/$groupId/messages',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
       );
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = response.data is String ? jsonDecode(response.data) : response.data;
         if (data is List) return List<Map<String, dynamic>>.from(data);
       }
     } catch (e) {
@@ -197,18 +231,20 @@ class GroupsApiService {
     if (token == null) return false;
 
     try {
-      final response = await http.delete(
-        Uri.parse('${ApiConfig.baseUrl}/api/groups/$groupId/members/$userId'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+      final response = await _dio.delete(
+        '${ApiConfig.baseUrl}/api/groups/$groupId/members/$userId',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
       );
       
       if (response.statusCode == 200 || response.statusCode == 204) {
         return true;
       } else {
-        print('Error removing member. Status: ${response.statusCode}, Body: ${response.body}');
+        print('Error removing member. Status: ${response.statusCode}, Body: ${response.data}');
         return false;
       }
     } catch (e) {
@@ -222,12 +258,14 @@ class GroupsApiService {
     if (token == null) return false;
 
     try {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/api/groups/$groupId/leave'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+      final response = await _dio.post(
+        '${ApiConfig.baseUrl}/api/groups/$groupId/leave',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -241,12 +279,14 @@ class GroupsApiService {
     if (token == null) return false;
 
     try {
-      final response = await http.delete(
-        Uri.parse('${ApiConfig.baseUrl}/api/groups/$groupId/leave'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+      final response = await _dio.delete(
+        '${ApiConfig.baseUrl}/api/groups/$groupId/leave',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
       );
       
       return response.statusCode == 200 || response.statusCode == 204;
@@ -261,12 +301,14 @@ class GroupsApiService {
     if (token == null) return false;
 
     try {
-      final response = await http.delete(
-        Uri.parse('${ApiConfig.baseUrl}/api/groups/$groupId'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+      final response = await _dio.delete(
+        '${ApiConfig.baseUrl}/api/groups/$groupId',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -294,13 +336,15 @@ class GroupsApiService {
       
       if (body.isEmpty) return true; // Nothing to update
 
-      final response = await http.patch(
-        Uri.parse('${ApiConfig.baseUrl}/api/groups/$groupId'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(body),
+      final response = await _dio.patch(
+        '${ApiConfig.baseUrl}/api/groups/$groupId',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+        data: body,
       );
       return response.statusCode == 200;
     } catch (e) {

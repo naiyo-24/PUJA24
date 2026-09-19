@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
-import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import '../core/theme/app_colors.dart';
 import '../features/pandals/presentation/puja_map_screen.dart';
 
@@ -115,79 +114,29 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
       child: Scaffold(
         extendBody: true,
         body: widget.navigationShell,
-        bottomNavigationBar: ref.watch(mapNavigatingProvider) ? const SizedBox.shrink() : SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(30),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
-                    child: GNav(
-                      rippleColor: Colors.grey[300]!,
-                      hoverColor: Colors.grey[100]!,
-                      gap: 4,
-                      activeColor: Colors.white,
-                      iconSize: 22,
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                      textStyle: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
-                      duration: const Duration(milliseconds: 400),
-                      tabBackgroundColor: AppColors.pujaRed,
-                      color: AppColors.mutedGray,
-                      tabs: const [
-                        GButton(
-                          icon: Icons.explore_outlined,
-                          text: 'Explore',
-                        ),
-                        GButton(
-                          icon: Icons.temple_hindu_outlined,
-                          text: 'Puja',
-                        ),
-                        GButton(
-                          icon: Icons.map_outlined,
-                          text: 'Map',
-                        ),
-                        GButton(
-                          icon: Icons.favorite_outline,
-                          text: 'Saved',
-                        ),
-                        GButton(
-                          icon: Icons.groups_outlined,
-                          text: 'Groups',
-                        ),
-                        GButton(
-                          icon: Icons.person_outline,
-                          text: 'Profile',
-                        ),
-                      ],
-                      selectedIndex: widget.navigationShell.currentIndex,
-                      onTabChange: (index) {
-                        widget.navigationShell.goBranch(
-                          index,
-                          initialLocation: index == widget.navigationShell.currentIndex,
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
+        bottomNavigationBar: ref.watch(mapNavigatingProvider) ? const SizedBox.shrink() : CurvedNavigationBar(
+          index: widget.navigationShell.currentIndex,
+          height: 75.0,
+          items: const <Widget>[
+            Icon(Icons.explore_outlined, size: 30, color: Colors.white),
+            Icon(Icons.temple_hindu_outlined, size: 30, color: Colors.white),
+            Icon(Icons.map_outlined, size: 30, color: Colors.white),
+            Icon(Icons.favorite_outline, size: 30, color: Colors.white),
+            Icon(Icons.groups_outlined, size: 30, color: Colors.white),
+            Icon(Icons.person_outline, size: 30, color: Colors.white),
+          ],
+          color: AppColors.pujaRed,
+          buttonBackgroundColor: AppColors.saffron,
+          backgroundColor: Colors.transparent,
+          animationCurve: Curves.easeInOut,
+          animationDuration: const Duration(milliseconds: 300),
+          onTap: (index) {
+            widget.navigationShell.goBranch(
+              index,
+              initialLocation: index == widget.navigationShell.currentIndex,
+            );
+          },
+          letIndexChange: (index) => true,
         ),
       ),
     );
