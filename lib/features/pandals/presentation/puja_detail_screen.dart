@@ -91,7 +91,7 @@ class _PujaDetailScreenState extends ConsumerState<PujaDetailScreen> {
       pinned: true,
       backgroundColor: AppColors.pujaRed,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
+        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
         onPressed: () => Navigator.of(context).pop(),
       ),
       actions: [

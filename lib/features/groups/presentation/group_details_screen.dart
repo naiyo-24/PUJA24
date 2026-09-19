@@ -301,7 +301,7 @@ class _GroupDetailsScreenState extends ConsumerState<GroupDetailsScreen> {
         elevation: 1,
         titleSpacing: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () => context.pop(),
         ),
         title: groupDetailsAsync.when(
@@ -851,7 +851,7 @@ class _GroupDetailsScreenState extends ConsumerState<GroupDetailsScreen> {
       );
     }
     
-    if (type == 'itinerary' && metaData != null) {
+    if ((type == 'itinerary' || metaData?['pandals'] != null) && metaData != null) {
       final pandalsList = metaData['pandals'] as List<dynamic>? ?? [];
       
       return Column(

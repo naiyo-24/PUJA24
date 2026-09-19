@@ -98,8 +98,10 @@ class _ItinerarySelectionSheetState extends ConsumerState<ItinerarySelectionShee
                     final pandal = filtered[index];
                     final isSelected = _selectedPandals.any((p) => p['id'] == pandal['id']);
                     
-                    return ListTile(
-                      leading: CircleAvatar(
+                    return Material(
+                      color: Colors.transparent,
+                      child: ListTile(
+                        leading: CircleAvatar(
                         backgroundColor: AppColors.saffron.withOpacity(0.2),
                         child: Text(
                           (pandal['name'] as String?)?.characters.first ?? 'P',
@@ -130,6 +132,7 @@ class _ItinerarySelectionSheetState extends ConsumerState<ItinerarySelectionShee
                           }
                         });
                       },
+                    ),
                     );
                   },
                 );

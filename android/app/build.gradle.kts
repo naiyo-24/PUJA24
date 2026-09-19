@@ -16,7 +16,7 @@ plugins {
 
 android {
     namespace = "com.naiyo24.puja24"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

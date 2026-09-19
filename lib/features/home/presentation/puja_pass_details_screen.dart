@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import 'providers/pass_provider.dart';
 import '../../pandals/presentation/providers/puja_list_provider.dart';
+import '../../auth/presentation/providers/auth_provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class PujaPassDetailsScreen extends ConsumerWidget {
   const PujaPassDetailsScreen({super.key});
@@ -21,7 +23,7 @@ class PujaPassDetailsScreen extends ConsumerWidget {
         backgroundColor: bgColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
           onPressed: () => context.pop(),
         ),
         title: const Text(
@@ -129,42 +131,65 @@ class PujaPassDetailsScreen extends ConsumerWidget {
                 // Action Button
                 Consumer(
                   builder: (context, ref, child) {
-                    final myVouchersState = ref.watch(myVouchersProvider);
-                    final hasPurchased = myVouchersState.maybeWhen(
-                      data: (vouchers) => vouchers.any((v) => v.packageId == package.id),
-                      orElse: () => false,
-                    );
+                    final authState = ref.watch(authProvider);
+                    final hasPurchased = authState is Authenticated ? authState.user.hasPujaPass : false;
 
-                    return SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: hasPurchased 
-                          ? null 
-                          : () {
-                              context.push('/pass-purchase', extra: package.id);
-                            },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: hasPurchased ? Colors.grey.shade800 : goldColor,
-                          foregroundColor: hasPurchased ? Colors.white54 : Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                    if (hasPurchased) {
+                      return Column(
+                        children: [
+                          const Text(
+                            'You already have the VIP pass!',
+                            style: TextStyle(color: goldColor, fontSize: 18, fontWeight: FontWeight.bold),
                           ),
-                          elevation: 0,
-                          disabledBackgroundColor: Colors.grey.shade800,
-                          disabledForegroundColor: Colors.white54,
-                        ),
-                        child: Text(
-                          hasPurchased 
-                            ? 'Already Purchased'
-                            : 'Buy Pass Now (₹${package.price.toStringAsFixed(0)})',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                          const SizedBox(height: 24),
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: goldColor.withOpacity(0.2),
+                                  blurRadius: 30,
+                                  spreadRadius: 5,
+                                ),
+                              ],
+                            ),
+                            child: QrImageView(
+                              data: authState is Authenticated ? authState.user.id : '',
+                              version: QrVersions.auto,
+                              size: 200.0,
+                              backgroundColor: Colors.white,
+                            ),
+                          ),
+                        ],
+                      );
+                    } else {
+                      return SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            context.push('/pass-purchase', extra: package.id);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: goldColor,
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            'Buy Pass Now (₹${package.price.toStringAsFixed(0)})',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
-                    );
+                      );
+                    }
                   }
                 ),
                 const SizedBox(height: 64), // Ensure the button fully clears the bottom of the screen

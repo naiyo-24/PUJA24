@@ -171,7 +171,7 @@ class _PassPurchaseFormScreenState extends ConsumerState<PassPurchaseFormScreen>
         backgroundColor: bgColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
           onPressed: () => context.pop(),
         ),
         title: const Text('Purchase Pass', style: TextStyle(color: goldColor, fontWeight: FontWeight.bold)),

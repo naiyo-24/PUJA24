@@ -159,35 +159,32 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
             data: (plansMap) {
               final dayPlan = plansMap[selectedDay] ?? [];
               if (dayPlan.isEmpty) {
-                return SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.event_busy, size: 64, color: goldColor.withOpacity(0.5)),
-                          const SizedBox(height: 16),
-                          const Text('No plans yet', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 8),
-                          const Text('Start adding pandals and cafes to your itinerary.', style: TextStyle(color: Colors.white54, fontSize: 14)),
-                          const SizedBox(height: 24),
-                          ElevatedButton.icon(
-                            onPressed: () => context.go('/explore'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: goldColor,
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            icon: const Icon(Icons.search, size: 20),
-                            label: const Text('Explore', style: TextStyle(fontWeight: FontWeight.bold)),
+                return SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 40.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.event_busy, size: 64, color: goldColor.withOpacity(0.5)),
+                        const SizedBox(height: 16),
+                        const Text('No plans yet', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        const Text('Start adding pandals and cafes to your itinerary.', style: TextStyle(color: Colors.white54, fontSize: 14)),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: () => context.go('/explore'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: goldColor,
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          const SizedBox(height: 40),
-                          const NativeAdWidget(height: 320),
-                        ],
-                      ),
+                          icon: const Icon(Icons.search, size: 20),
+                          label: const Text('Explore', style: TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                        const SizedBox(height: 40),
+                        const NativeAdWidget(height: 320),
+                      ],
                     ),
                   ),
                 );

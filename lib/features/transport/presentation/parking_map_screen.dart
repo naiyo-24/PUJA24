@@ -144,7 +144,7 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: isDark ? Colors.white : Colors.black),
+          icon: Icon(Icons.arrow_back_ios_new, color: isDark ? Colors.white : Colors.black),
           onPressed: () => context.pop(),
         ),
         title: Text(

@@ -212,13 +212,16 @@ class GroupWebsocketService {
               }
 
               final existingIndex = _messages.indexWhere((m) => 
-                m['isMe'] == true && m['text'] == content && m['messageType'] == msgType &&
+                m['isMe'] == true && 
+                m['text'] == content && 
+                (m['messageType'] == msgType || m['messageType'] == 'itinerary' || msgType == 'text') &&
                 (DateTime.now().millisecondsSinceEpoch - (int.tryParse(m['id'].toString()) ?? 0)) < 5000
               );
 
               if (existingIndex != -1 && isMe) {
-                // Update existing optimistic message with real ID
+                // Update existing optimistic message with real ID and real server type
                 _messages[existingIndex]['id'] = msgId;
+                _messages[existingIndex]['messageType'] = msgType;
               } else {
                 String timeStr = 'Just now';
                 DateTime msgDate = DateTime.now();

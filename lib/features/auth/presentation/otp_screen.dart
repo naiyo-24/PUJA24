@@ -193,7 +193,7 @@ class _OtpScreenState extends State<OtpScreen> {
                                     context.go('/login');
                                   }
                                 },
-                                icon: const Icon(Icons.arrow_back, color: AppColors.antiqueGold, size: 16),
+                                icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.antiqueGold, size: 16),
                                 label: const Text('Back to Login', style: TextStyle(color: AppColors.antiqueGold, fontSize: 12)),
                               ),
                             

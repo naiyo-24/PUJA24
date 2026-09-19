@@ -17,11 +17,12 @@ class UserModel {
   final String? sex;
   final String? address;
   final List<String>? interestedPandals;
+  final bool hasPujaPass;
   
   UserModel({
     required this.id, required this.email, required this.fullName,
     this.profileImageUrl, this.phoneNumber, this.age, this.sex,
-    this.address, this.interestedPandals
+    this.address, this.interestedPandals, this.hasPujaPass = false,
   });
   
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -35,7 +36,23 @@ class UserModel {
       sex: json['sex'],
       address: json['address'],
       interestedPandals: json['interested_pandals'] != null ? List<String>.from(json['interested_pandals']) : null,
+      hasPujaPass: json['has_puja_pass'] ?? false,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'email': email,
+      'full_name': fullName,
+      'profile_image_url': profileImageUrl,
+      'phone_number': phoneNumber,
+      'age': age,
+      'sex': sex,
+      'address': address,
+      'interested_pandals': interestedPandals,
+      'has_puja_pass': hasPujaPass,
+    };
   }
 }
 
@@ -156,6 +173,29 @@ class AuthNotifier extends StateNotifier<AuthState> {
       } catch (e) {
          print("Error updating profile: $e");
       }
+  }
+
+  Future<void> setPujaPassPurchased() async {
+    if (state is Authenticated) {
+      final authState = state as Authenticated;
+      final updatedUser = UserModel(
+        id: authState.user.id,
+        email: authState.user.email,
+        fullName: authState.user.fullName,
+        profileImageUrl: authState.user.profileImageUrl,
+        phoneNumber: authState.user.phoneNumber,
+        age: authState.user.age,
+        sex: authState.user.sex,
+        address: authState.user.address,
+        interestedPandals: authState.user.interestedPandals,
+        hasPujaPass: true,
+      );
+      
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_data', jsonEncode(updatedUser.toJson()));
+      
+      state = Authenticated(updatedUser, authState.token, authState.isNewUser);
+    }
   }
 
   Future<void> logout() async {

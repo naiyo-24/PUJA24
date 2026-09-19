@@ -6,6 +6,7 @@ import '../../food/domain/models/restaurant_model.dart';
 import '../../pandals/domain/models/puja_detail_model.dart';
 import '../../pandals/presentation/providers/save_pandal_provider.dart';
 import 'providers/saved_provider.dart';
+import '../../../core/widgets/native_ad_widget.dart';
 
 class SavedScreen extends ConsumerStatefulWidget {
   const SavedScreen({super.key});
@@ -105,6 +106,8 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
             ),
           ),
 
+
+
           // ── Saved Items List or Empty State ──────────────────────────────
           itemsAsync.when(
             data: (allItems) {
@@ -164,6 +167,13 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
             ),
             error: (err, stack) => const SliverFillRemaining(
               child: Center(child: Text('Error loading saved items', style: TextStyle(color: Colors.red))),
+            ),
+          ),
+          // ── Banner Ad at Bottom ─────────────────────────────────────────
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: NativeAdWidget(height: 320),
             ),
           ),
             

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -33,6 +34,7 @@ void main() async {
   );
 }
 
+
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
@@ -48,6 +50,11 @@ class MyApp extends ConsumerWidget {
       routerConfig: router,
       debugShowCheckedModeBanner: false,
       scrollBehavior: const MaterialScrollBehavior().copyWith(
+        dragDevices: {
+          PointerDeviceKind.touch,
+          PointerDeviceKind.mouse,
+          PointerDeviceKind.trackpad,
+        },
         physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       ),
     );
