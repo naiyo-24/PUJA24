@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
@@ -6,6 +7,7 @@ import '../../pandals/domain/models/puja_detail_model.dart';
 import 'providers/planner_provider.dart';
 import '../../../core/widgets/banner_ad_widget.dart';
 import '../../../core/widgets/native_ad_widget.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class PlannerScreen extends ConsumerStatefulWidget {
   const PlannerScreen({super.key});
@@ -146,11 +148,10 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
             ),
           ),
           
-          // Constant Banner Ad below header
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: BannerAdWidget(),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: BannerAdWidget(adUnitId: Platform.isAndroid ? dotenv.env['ADMOB_BANNER_ITINERARY_ANDROID'] : dotenv.env['ADMOB_BANNER_ITINERARY_IOS']),
             ),
           ),
 
@@ -183,7 +184,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                           label: const Text('Explore', style: TextStyle(fontWeight: FontWeight.bold)),
                         ),
                         const SizedBox(height: 40),
-                        const NativeAdWidget(height: 320),
+                        NativeAdWidget(height: 320, adUnitId: Platform.isAndroid ? dotenv.env['ADMOB_NATIVE_ITINERARY_ANDROID'] : dotenv.env['ADMOB_NATIVE_ITINERARY_IOS']),
                       ],
                     ),
                   ),
@@ -195,9 +196,9 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       if (index == dayPlan.length) {
-                        return const Padding(
-                          padding: EdgeInsets.only(top: 24.0, bottom: 24.0),
-                          child: NativeAdWidget(height: 320),
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 24.0, bottom: 24.0),
+                          child: NativeAdWidget(height: 320, adUnitId: Platform.isAndroid ? dotenv.env['ADMOB_NATIVE_ITINERARY_ANDROID'] : dotenv.env['ADMOB_NATIVE_ITINERARY_IOS']),
                         );
                       }
                       
@@ -208,9 +209,9 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
                         children: [
                           _buildTimelineItem(item, isLast, goldColor),
                           if (index == 1 && dayPlan.length > 2)
-                             const Padding(
-                               padding: EdgeInsets.only(bottom: 24.0),
-                               child: BannerAdWidget(),
+                             Padding(
+                               padding: const EdgeInsets.only(bottom: 24.0),
+                               child: BannerAdWidget(adUnitId: Platform.isAndroid ? dotenv.env['ADMOB_BANNER_ITINERARY_ANDROID'] : dotenv.env['ADMOB_BANNER_ITINERARY_IOS']),
                              ),
                         ],
                       );

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,8 @@ import '../../pandals/domain/models/puja_detail_model.dart';
 import '../../pandals/presentation/providers/save_pandal_provider.dart';
 import 'providers/saved_provider.dart';
 import '../../../core/widgets/native_ad_widget.dart';
+import '../../../core/widgets/banner_ad_widget.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class SavedScreen extends ConsumerStatefulWidget {
   const SavedScreen({super.key});
@@ -169,11 +172,10 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
               child: Center(child: Text('Error loading saved items', style: TextStyle(color: Colors.red))),
             ),
           ),
-          // ── Banner Ad at Bottom ─────────────────────────────────────────
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: NativeAdWidget(height: 320),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: BannerAdWidget(adUnitId: Platform.isAndroid ? dotenv.env['ADMOB_BANNER_SAVEDPLACES_ANDROID'] : dotenv.env['ADMOB_BANNER_SAVEDPLACES_IOS']),
             ),
           ),
             

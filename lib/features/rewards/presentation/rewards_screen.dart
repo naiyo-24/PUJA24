@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -7,6 +8,7 @@ import '../../../core/services/rewards_api_service.dart';
 import '../../../core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/native_ad_widget.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
 import '../../home/presentation/providers/pass_provider.dart';
 
@@ -177,7 +179,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
               children: [
                 _buildPointsCard(),
                 const SizedBox(height: 24),
-                const NativeAdWidget(height: 380),
+                NativeAdWidget(height: 380, adUnitId: Platform.isAndroid ? dotenv.env['ADMOB_NATIVE_PUJAREWARDS_ANDROID'] : dotenv.env['ADMOB_NATIVE_PUJAREWARDS_IOS']),
                 const SizedBox(height: 24),
                 if (hasPass) ...[
                   _buildAlreadyGotPassSection(authState is Authenticated ? authState.user.id : ''),

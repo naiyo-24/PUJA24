@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/banner_ad_widget.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart';
@@ -299,9 +300,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 32),
             _buildMenuSection(context, theme, isDark),
             const SizedBox(height: 24),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: BannerAdWidget(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: BannerAdWidget(adUnitId: Platform.isAndroid ? dotenv.env['ADMOB_BANNER_PROFILE_ANDROID'] : dotenv.env['ADMOB_BANNER_PROFILE_IOS']),
             ),
             const SizedBox(height: 32),
             _buildLogoutButton(context, theme),

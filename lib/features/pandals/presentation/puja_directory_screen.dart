@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'dart:io';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_typography.dart';
 import 'providers/puja_list_provider.dart';
@@ -9,6 +10,7 @@ import 'widgets/pandal_card_skeleton.dart';
 import '../../../core/utils/permission_helper.dart';
 import '../../../../core/widgets/native_ad_widget.dart';
 import '../../../../core/widgets/banner_ad_widget.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class PujaDirectoryScreen extends ConsumerStatefulWidget {
   const PujaDirectoryScreen({super.key});
@@ -47,7 +49,7 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
               children: [
                   _buildFilterChips(),
                   const SizedBox(height: 8),
-                  const BannerAdWidget(key: ValueKey('banner_ad_top')),
+                  BannerAdWidget(key: const ValueKey('banner_ad_top'), adUnitId: Platform.isAndroid ? dotenv.env['ADMOB_BANNER_PANDAL_ANDROID'] : dotenv.env['ADMOB_BANNER_PANDAL_IOS']),
                   const SizedBox(height: 16),
                   _buildQuickStats(theme),
                   const SizedBox(height: 32),
@@ -55,7 +57,7 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
                   const SizedBox(height: 16),
                   _buildPopularPujasRow(context),
                   const SizedBox(height: 24),
-                  const BannerAdWidget(key: ValueKey('banner_ad_mid')),
+                  BannerAdWidget(key: const ValueKey('banner_ad_mid'), adUnitId: Platform.isAndroid ? dotenv.env['ADMOB_BANNER_PANDAL_ANDROID'] : dotenv.env['ADMOB_BANNER_PANDAL_IOS']),
                   const SizedBox(height: 24),
                   _buildSectionHeader(theme, '📍 Explore by Area', 'View All'),
                   const SizedBox(height: 16),
@@ -485,7 +487,7 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
               children.add(
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: BannerAdWidget(key: ValueKey('banner_ad_$i')),
+                  child: BannerAdWidget(key: ValueKey('banner_ad_$i'), adUnitId: Platform.isAndroid ? dotenv.env['ADMOB_BANNER_PANDAL_ANDROID'] : dotenv.env['ADMOB_BANNER_PANDAL_IOS']),
                 )
               );
               countSinceLastAd = 0;

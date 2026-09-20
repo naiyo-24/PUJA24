@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/native_ad_widget.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AboutUsScreen extends StatelessWidget {
   const AboutUsScreen({super.key});
@@ -212,7 +214,7 @@ class AboutUsScreen extends StatelessWidget {
                   ).animate().fade(delay: 1000.ms).slideX(begin: 0.1),
                   
                   const SizedBox(height: 32),
-                  const NativeAdWidget(height: 320),
+                  NativeAdWidget(height: 320, adUnitId: Platform.isAndroid ? dotenv.env['ADMOB_NATIVE_ABOUT_ANDROID'] : dotenv.env['ADMOB_NATIVE_ABOUT_IOS']),
                   const SizedBox(height: 32),
                   
                   Center(

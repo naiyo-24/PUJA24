@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -7,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../home/presentation/providers/pass_provider.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
 import '../../../core/widgets/native_ad_widget.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class MyPassesScreen extends ConsumerWidget {
   const MyPassesScreen({super.key});
@@ -47,7 +49,7 @@ class MyPassesScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text('You haven\'t purchased any passes yet.', style: TextStyle(color: Colors.white.withOpacity(0.6))),
                   const SizedBox(height: 48),
-                  const NativeAdWidget(height: 320),
+                  NativeAdWidget(height: 320, adUnitId: Platform.isAndroid ? dotenv.env['ADMOB_NATIVE_MYPASSES_ANDROID'] : dotenv.env['ADMOB_NATIVE_MYPASSES_IOS']),
                 ],
               ),
             );
@@ -66,7 +68,7 @@ class MyPassesScreen extends ConsumerWidget {
               separatorBuilder: (context, index) => const SizedBox(height: 24),
               itemBuilder: (context, index) {
                 if (index == vouchers.length) {
-                  return const NativeAdWidget(height: 320);
+                  return NativeAdWidget(height: 320, adUnitId: Platform.isAndroid ? dotenv.env['ADMOB_NATIVE_MYPASSES_ANDROID'] : dotenv.env['ADMOB_NATIVE_MYPASSES_IOS']);
                 }
                 final voucher = vouchers[index];
                 final isRedeemed = voucher.status.toLowerCase() == 'redeemed';

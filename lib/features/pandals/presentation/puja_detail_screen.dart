@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
@@ -17,6 +18,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../../core/widgets/native_ad_widget.dart';
 import 'package:go_router/go_router.dart';
 import 'puja_map_screen.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class PujaDetailScreen extends ConsumerStatefulWidget {
   final String id;
@@ -56,9 +58,9 @@ class _PujaDetailScreenState extends ConsumerState<PujaDetailScreen> {
                   _buildDivider(),
                   
                   // Native Ad Integration on Detail Screen
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-                    child: NativeAdWidget(height: 380),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+                    child: NativeAdWidget(height: 380, adUnitId: Platform.isAndroid ? dotenv.env['ADMOB_NATIVE_PUJADETAILS_ANDROID'] : dotenv.env['ADMOB_NATIVE_PUJADETAILS_IOS']),
                   ),
 
                   // More sections will go here

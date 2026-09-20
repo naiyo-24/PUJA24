@@ -477,7 +477,7 @@ class _GroupDetailsScreenState extends ConsumerState<GroupDetailsScreen> {
           
           // Banner Ad
           BannerAdWidget(
-            adUnitId: dotenv.env['ADMOB_BANNER_CHAT_ANDROID'],
+            adUnitId: Platform.isAndroid ? dotenv.env['ADMOB_BANNER_CHAT_ANDROID'] : dotenv.env['ADMOB_BANNER_CHAT_IOS'],
           ),
           
           // Message Input Area
