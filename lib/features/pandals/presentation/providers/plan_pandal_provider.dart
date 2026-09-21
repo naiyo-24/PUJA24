@@ -1,18 +1,15 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../data/api/pandal_api_service.dart';
 
 final planPandalIdsProvider = StateNotifierProvider<PlanPandalIdsNotifier, Map<String, String>>((ref) {
-  final apiService = ref.watch(pandalApiServiceProvider);
-  return PlanPandalIdsNotifier(apiService);
+  return PlanPandalIdsNotifier();
 });
 
 class PlanPandalIdsNotifier extends StateNotifier<Map<String, String>> {
-  final PandalApiService _apiService;
   static const _prefsKey = 'plan_pandal_map';
 
-  PlanPandalIdsNotifier(this._apiService) : super({}) {
+  PlanPandalIdsNotifier() : super({}) {
     _loadPlanMap();
   }
 
@@ -27,13 +24,6 @@ class PlanPandalIdsNotifier extends StateNotifier<Map<String, String>> {
         state = {};
       }
     }
-    
-    // Fetch from backend
-    final serverMap = await _apiService.fetchPujaPlans();
-    if (serverMap.isNotEmpty || state.isNotEmpty) {
-      state = serverMap;
-      _saveMapToPrefs(state);
-    }
   }
 
   Future<void> _saveMapToPrefs(Map<String, String> map) async {
@@ -41,30 +31,16 @@ class PlanPandalIdsNotifier extends StateNotifier<Map<String, String>> {
     await prefs.setString(_prefsKey, jsonEncode(map));
   }
 
-  void addPlan(String placeId, String day) async {
-    final previousState = state;
+  void addPlan(String placeId, String day) {
     state = {...state, placeId: day};
     _saveMapToPrefs(state);
-    
-    final success = await _apiService.addToPlan(placeId, day);
-    if (!success) {
-      state = previousState;
-      _saveMapToPrefs(state);
-    }
   }
 
-  void removePlan(String placeId) async {
+  void removePlan(String placeId) {
     if (state.containsKey(placeId)) {
-      final previousState = state;
       final newState = Map<String, String>.from(state)..remove(placeId);
       state = newState;
       _saveMapToPrefs(state);
-      
-      final success = await _apiService.removeFromPlan(placeId);
-      if (!success) {
-        state = previousState;
-        _saveMapToPrefs(state);
-      }
     }
   }
 }

@@ -7,7 +7,6 @@ import 'widgets/puja_theme_section.dart';
 import 'widgets/puja_facilities.dart';
 import 'widgets/puja_transit.dart';
 import 'widgets/puja_nearby_places.dart';
-import 'widgets/puja_reviews_section.dart';
 import '../../../../core/theme/app_typography.dart';
 import 'providers/puja_detail_provider.dart';
 import 'providers/save_pandal_provider.dart';
@@ -71,9 +70,6 @@ class _PujaDetailScreenState extends ConsumerState<PujaDetailScreen> {
                   _buildDivider(),
                   _buildDivider(),
                   PujaTransit(puja: puja),
-                  _buildDivider(),
-                  
-                  PujaReviewsSection(puja: puja),
                   _buildDivider(),
                   
                   // Native Ad Integration on Detail Screen
