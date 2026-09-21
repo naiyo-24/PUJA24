@@ -143,7 +143,7 @@ class _GroupDetailsScreenState extends ConsumerState<GroupDetailsScreen> {
     Navigator.pop(context);
     final permission = await PermissionHelper.requestPhotoPermission(
       context,
-      rationale: 'PUJA24 needs access to your photos to send images to your group.',
+      rationale: 'PUJO24 needs access to your photos to send images to your group.',
     );
     if (permission.isGranted || permission.isLimited) {
       final picker = ImagePicker();
@@ -160,7 +160,7 @@ class _GroupDetailsScreenState extends ConsumerState<GroupDetailsScreen> {
     Navigator.pop(context);
     final permission = await PermissionHelper.requestCameraPermission(
       context,
-      rationale: 'PUJA24 needs access to your camera to capture and send photos to your group.',
+      rationale: 'PUJO24 needs access to your camera to capture and send photos to your group.',
     );
     if (permission.isGranted) {
       final picker = ImagePicker();
@@ -206,7 +206,7 @@ class _GroupDetailsScreenState extends ConsumerState<GroupDetailsScreen> {
       if (!mounted) return;
       permission = await PermissionHelper.requestLocationPermission(
         context,
-        rationale: 'PUJA24 requires your location so you can share it with your group members in the chat.',
+        rationale: 'PUJO24 requires your location so you can share it with your group members in the chat.',
       );
       if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Location permission denied')));

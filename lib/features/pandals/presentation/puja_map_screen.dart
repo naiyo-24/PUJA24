@@ -247,7 +247,7 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
         if (!mounted) return;
         permission = await PermissionHelper.requestLocationPermission(
           context,
-          rationale: 'PUJA24 requires your location to recommend nearby pandals and help you navigate safely on the map.',
+          rationale: 'PUJO24 requires your location to recommend nearby pandals and help you navigate safely on the map.',
         );
         if (permission == LocationPermission.denied) {
           if (mounted) setState(() => _isLoadingLocation = false);
@@ -585,7 +585,15 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
     // Default center to Kolkata if user location is not available
     final center = _userLocation ?? const LatLng(22.5726, 88.3639);
 
-    return Scaffold(
+    return PopScope(
+      canPop: !_isNavigating,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        if (_isNavigating) {
+          _endNavigation();
+        }
+      },
+      child: Scaffold(
       body: Stack(
         children: [
           // The Map
@@ -976,7 +984,13 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
                         ),
                         child: IconButton(
                           icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.deepMaroon, size: 20),
-                          onPressed: () => context.go('/explore'),
+                          onPressed: () {
+                            if (_isNavigating) {
+                              _endNavigation();
+                            } else {
+                              context.go('/explore');
+                            }
+                          },
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1157,7 +1171,7 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
           ],
         ],
       ),
-    );
+    ));
   }
 
   IconData _getFilterIcon(String filter) {
@@ -1234,6 +1248,8 @@ class _PujaMapScreenState extends ConsumerState<PujaMapScreen> {
   }
 
   Future<void> _onMapTapped(LatLng position) async {
+    if (_isNavigating) return;
+
     setState(() {
       _selectedPuja = null;
     });

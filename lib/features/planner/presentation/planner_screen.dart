@@ -29,9 +29,14 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
 
     return Scaffold(
       backgroundColor: bgColor,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(plannerProvider);
+          await Future.delayed(const Duration(milliseconds: 500));
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
           // ── Header ──────────────────────────────────────────────────────
           SliverAppBar(
             expandedHeight: 220.0,
@@ -233,6 +238,7 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
+      ), // Close RefreshIndicator
     );
   }
 

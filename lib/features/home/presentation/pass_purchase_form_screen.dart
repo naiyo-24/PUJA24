@@ -132,7 +132,7 @@ class _PassPurchaseFormScreenState extends ConsumerState<PassPurchaseFormScreen>
           'key': orderDetails['key_id'],
           'amount': orderDetails['amount'],
           'order_id': orderDetails['gateway_order_id'],
-          'name': 'PUJA24 VIP Pass',
+          'name': 'PUJO24 VIP Pass',
           'description': 'Exclusive VIP Access',
           'prefill': {
             'contact': _phoneController.text.trim(),

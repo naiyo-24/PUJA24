@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_colors.dart';
 import 'providers/pass_provider.dart';
 import '../../pandals/presentation/providers/puja_list_provider.dart';
@@ -91,7 +92,30 @@ class PujaPassDetailsScreen extends ConsumerWidget {
                 const SizedBox(height: 20),
                 _buildFeatureRow(Icons.temple_hindu, 'Universal Access', 'Valid at every partnered puja pandal across the city', goldColor),
                 const SizedBox(height: 20),
-                _buildFeatureRow(Icons.location_on, 'Physical Pass Collection', package.collectionVenue.isNotEmpty ? 'Collect from: ${package.collectionVenue}' : 'Show digital proof at HQ to collect passes', goldColor),
+                _buildFeatureRow(
+                  Icons.location_on, 
+                  'Physical Pass Collection', 
+                  package.collectionVenue.isNotEmpty ? 'Collect from: ${package.collectionVenue}' : 'Show digital proof at HQ to collect passes', 
+                  goldColor,
+                  action: (package.collectionVenueMapUrl != null && package.collectionVenueMapUrl!.isNotEmpty)
+                      ? InkWell(
+                          onTap: () async {
+                            final url = Uri.parse(package.collectionVenueMapUrl!);
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(url);
+                            }
+                          },
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.map, size: 16, color: goldColor),
+                              const SizedBox(width: 6),
+                              Text('View on Map', style: TextStyle(color: goldColor, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        )
+                      : null,
+                ),
                 
                 const SizedBox(height: 32),
                 const Text(
@@ -132,7 +156,13 @@ class PujaPassDetailsScreen extends ConsumerWidget {
                 Consumer(
                   builder: (context, ref, child) {
                     final authState = ref.watch(authProvider);
-                    final hasPurchased = authState is Authenticated ? authState.user.hasPujaPass : false;
+                    bool hasPurchased = authState is Authenticated ? authState.user.hasPujaPass : false;
+                    
+                    // Fallback to checking actual vouchers if the local auth state is out of sync
+                    final vouchersState = ref.watch(myVouchersProvider);
+                    if (vouchersState.hasValue && vouchersState.value != null && vouchersState.value!.isNotEmpty) {
+                      hasPurchased = true;
+                    }
 
                     if (hasPurchased) {
                       return Column(
@@ -142,24 +172,28 @@ class PujaPassDetailsScreen extends ConsumerWidget {
                             style: TextStyle(color: goldColor, fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 24),
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: goldColor.withOpacity(0.2),
-                                  blurRadius: 30,
-                                  spreadRadius: 5,
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                context.push('/my-passes');
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: goldColor,
+                                foregroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
-                              ],
-                            ),
-                            child: QrImageView(
-                              data: authState is Authenticated ? authState.user.id : '',
-                              version: QrVersions.auto,
-                              size: 200.0,
-                              backgroundColor: Colors.white,
+                                elevation: 0,
+                              ),
+                              child: const Text(
+                                'View My Pass',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -201,7 +235,7 @@ class PujaPassDetailsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFeatureRow(IconData icon, String title, String subtitle, Color goldColor) {
+  Widget _buildFeatureRow(IconData icon, String title, String subtitle, Color goldColor, {Widget? action}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -234,6 +268,10 @@ class PujaPassDetailsScreen extends ConsumerWidget {
                   fontSize: 14,
                 ),
               ),
+              if (action != null) ...[
+                const SizedBox(height: 8),
+                action,
+              ],
             ],
           ),
         ),

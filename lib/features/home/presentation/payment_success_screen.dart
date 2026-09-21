@@ -96,7 +96,7 @@ class PaymentSuccessScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Your digital pass is now available!\n\nGo to your Profile Screen and tap the "My Passes" option to view your pass details and QR code.\n\nPlease visit the PUJA24 HQ at Park Street, Kolkata to collect your physical VIP passes.\n\nShow this digital proof (available in your Profile > My Passes) at the counter.',
+                        'Your digital pass is now available!\n\nGo to your Profile Screen and tap the "My Passes" option to view your pass details and QR code.\n\nPlease visit the PUJO24 HQ at Park Street, Kolkata to collect your physical VIP passes.\n\nShow this digital proof (available in your Profile > My Passes) at the counter.',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.8),
                           fontSize: 14,

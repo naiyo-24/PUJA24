@@ -229,6 +229,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('jwt_token');
     await prefs.remove('user_data');
+    await prefs.remove('saved_pandal_ids');
+    await prefs.remove('plan_pandal_map');
     state = const Unauthenticated();
   }
 }

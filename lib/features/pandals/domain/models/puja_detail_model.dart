@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../../../core/network/api_config.dart';
 
 class PujaDetailModel {
   final String id;
@@ -14,6 +15,7 @@ class PujaDetailModel {
   final String idolArtist;
   final String pandalDesigner;
   final String imageUrl;
+  final List<String> imageUrls;
   final int totalPhotos;
   final String crowdStatus; // "High", "Moderate", "Low"
   final int queueTimeMins;
@@ -40,6 +42,7 @@ class PujaDetailModel {
     required this.idolArtist,
     required this.pandalDesigner,
     required this.imageUrl,
+    this.imageUrls = const [],
     required this.totalPhotos,
     required this.crowdStatus,
     required this.queueTimeMins,
@@ -68,21 +71,55 @@ class PujaDetailModel {
       }
     }
 
+    String rawImageUrl = json['imageUrl'] ?? metadata['imageUrl'] ?? '';
+    List<String> parsedImageUrls = [];
+    
+    // If Admin panel saved multiple images in metadata, use the first one as default
+    if (metadata['images'] != null && metadata['images'] is List && (metadata['images'] as List).isNotEmpty) {
+      if (rawImageUrl.isEmpty || rawImageUrl.contains('pandal_image.png')) {
+        rawImageUrl = metadata['images'][0].toString();
+      }
+      
+      // Parse all images
+      for (var img in metadata['images']) {
+        String url = img.toString();
+        if (url.isNotEmpty && !url.startsWith('http')) {
+          if (!url.startsWith('/')) {
+            url = '/$url';
+          }
+          url = '${ApiConfig.baseUrl}$url';
+        }
+        parsedImageUrls.add(url);
+      }
+    }
+
+    if (rawImageUrl.isNotEmpty && !rawImageUrl.startsWith('http')) {
+      if (!rawImageUrl.startsWith('/')) {
+        rawImageUrl = '/$rawImageUrl';
+      }
+      rawImageUrl = '${ApiConfig.baseUrl}$rawImageUrl';
+    }
+    
+    if (parsedImageUrls.isEmpty && rawImageUrl.isNotEmpty) {
+      parsedImageUrls.add(rawImageUrl);
+    }
+
     return PujaDetailModel(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
       type: json['type'] ?? 'pandal',
       area: json['area'] ?? json['zone'] ?? '',
       rating: (json['rating'] ?? json['avgRating'] ?? 0.0).toString(),
-      distance: (json['distance'] ?? json['distanceMeters'] ?? 0.0).toString(),
+      distance: _formatDistance((json['distance'] ?? json['distanceMeters'] ?? 0.0) as num),
       latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : 0.0,
       longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : 0.0,
       historySummary: metadata['historySummary'] ?? '',
       theme2026: json['theme2026'] ?? metadata['theme2026'] ?? '',
       idolArtist: metadata['idolArtist'] ?? '',
       pandalDesigner: metadata['pandalDesigner'] ?? '',
-      imageUrl: json['imageUrl'] ?? metadata['imageUrl'] ?? '',
-      totalPhotos: json['totalPhotos'] ?? metadata['totalPhotos'] ?? 0,
+      imageUrl: rawImageUrl,
+      imageUrls: parsedImageUrls,
+      totalPhotos: json['totalPhotos'] ?? metadata['totalPhotos'] ?? parsedImageUrls.length,
       crowdStatus: json['crowdStatus'] ?? metadata['crowdStatus'] ?? 'Moderate',
       queueTimeMins: json['queueTimeMins'] ?? metadata['queueTimeMins'] ?? 30,
       amenities: List<String>.from(metadata['amenities'] ?? []),
@@ -94,5 +131,11 @@ class PujaDetailModel {
       payAndUseToilet: metadata['payAndUseToilet'] ?? '',
       rainStatus: json['rainStatus'] ?? metadata['rainStatus'] ?? 'Clear',
     );
+  }
+
+  static String _formatDistance(num distanceInMeters) {
+    if (distanceInMeters <= 0) return '';
+    final distanceInKm = distanceInMeters / 1000.0;
+    return '${distanceInKm.toStringAsFixed(1)} km';
   }
 }

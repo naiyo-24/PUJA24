@@ -5,6 +5,7 @@ class PassPackageModel {
   final double price;
   final int personCapacity;
   final String collectionVenue;
+  final String? collectionVenueMapUrl;
   final bool isActive;
   final List<String> includedPandalIds;
   final Map<String, List<String>> includedPandalsByZone;
@@ -16,6 +17,7 @@ class PassPackageModel {
     required this.price,
     required this.personCapacity,
     required this.collectionVenue,
+    this.collectionVenueMapUrl,
     required this.isActive,
     required this.includedPandalIds,
     required this.includedPandalsByZone,
@@ -29,6 +31,7 @@ class PassPackageModel {
       price: (json['price'] as num).toDouble(),
       personCapacity: json['person_capacity'] ?? 3,
       collectionVenue: json['collection_venue'] ?? '',
+      collectionVenueMapUrl: json['collection_venue_gmap_link'],
       isActive: json['is_active'] ?? true,
       includedPandalIds: List<String>.from(json['included_pandal_ids'] ?? []),
       includedPandalsByZone: json['included_pandals_by_zone'] != null

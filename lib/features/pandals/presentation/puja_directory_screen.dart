@@ -25,6 +25,14 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
   String _selectedFilter = 'All';
   
   @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      ref.read(pandalSearchQueryProvider.notifier).state = _searchController.text;
+    });
+  }
+  
+  @override
   void dispose() {
     _searchController.dispose();
     _scrollController.dispose();
@@ -39,9 +47,17 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
 
     return Scaffold(
       backgroundColor: bgColor,
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(filteredPujasProvider);
+          ref.invalidate(popularPujasProvider);
+          ref.invalidate(nearbyPandalsProvider);
+          await Future.delayed(const Duration(milliseconds: 500));
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          controller: _scrollController,
+          slivers: [
           _buildHeroHeader(context, theme),
           SliverToBoxAdapter(
             child: Column(
@@ -72,6 +88,7 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
           ),
         ],
       ),
+      ), // Close RefreshIndicator
     );
   }
 
@@ -227,7 +244,7 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
             itemCount: pandals.length,
             itemBuilder: (context, index) {
               final p = pandals[index];
-              return _buildPandalCard(context, p.id, p.name, p.area, p.rating, p.distance);
+              return _buildPandalCard(context, p.id, p.name, p.area, p.rating, p.distance, p.imageUrl);
             },
           );
         },
@@ -242,7 +259,7 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
     );
   }
 
-  Widget _buildPandalCard(BuildContext context, String id, String name, String area, String rating, String distance) {
+  Widget _buildPandalCard(BuildContext context, String id, String name, String area, String rating, String distance, String imageUrl) {
     return GestureDetector(
       onTap: () {
         context.push('/puja_detail/$id');
@@ -263,12 +280,25 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
               children: [
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  child: Image.asset(
-                    'assets/images/ad2.png',
-                    height: 160,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
+                  child: imageUrl.startsWith('http') 
+                    ? Image.network(
+                        imageUrl,
+                        height: 160,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          height: 160,
+                          width: double.infinity,
+                          color: const Color(0xFF2A2A2A),
+                          child: const Center(child: Icon(Icons.image, color: Colors.white54, size: 48)),
+                        ),
+                      )
+                    : Container(
+                        height: 160,
+                        width: double.infinity,
+                        color: const Color(0xFF2A2A2A),
+                        child: const Center(child: Icon(Icons.image, color: Colors.white54, size: 48)),
+                      ),
                 ),
                 // Dark gradient overlay
                 Positioned.fill(
@@ -285,21 +315,22 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
                   ),
                 ),
                 // Distance badge
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      distance,
-                      style: const TextStyle(fontSize: 11, color: AppColors.deepMaroon, fontWeight: FontWeight.bold),
+                if (distance.isNotEmpty)
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        distance,
+                        style: const TextStyle(fontSize: 11, color: AppColors.deepMaroon, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
-                ),
                 // Favourite heart
                 Positioned(
                   top: 10,
@@ -528,7 +559,7 @@ class _PujaDirectoryScreenState extends ConsumerState<PujaDirectoryScreen> {
                   onPressed: () async {
                     await PermissionHelper.requestLocationPermission(
                       context,
-                      rationale: 'PUJA24 requires your location to recommend nearby pandals and help you navigate safely.',
+                      rationale: 'PUJO24 requires your location to recommend nearby pandals and help you navigate safely.',
                     );
                     // Refresh the provider
                     ref.invalidate(nearbyPandalsProvider);

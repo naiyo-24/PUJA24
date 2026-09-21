@@ -44,7 +44,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         if (!mounted) return;
         permission = await PermissionHelper.requestLocationPermission(
           context,
-          rationale: 'PUJA24 needs your location to set your home base.',
+          rationale: 'PUJO24 needs your location to set your home base.',
         );
         if (permission == LocationPermission.denied) {
           throw Exception('Location permissions are denied');

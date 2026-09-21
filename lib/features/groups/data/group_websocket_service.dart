@@ -355,7 +355,7 @@ class GroupWebsocketService {
     if (permission == LocationPermission.denied) {
       permission = await PermissionHelper.requestLocationPermission(
         context,
-        rationale: 'PUJA24 requires background location tracking so your group can see your live location while pandal hopping.',
+        rationale: 'PUJO24 requires background location tracking so your group can see your live location while pandal hopping.',
       );
       if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
         return false; // Permission denied

@@ -39,7 +39,7 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
         if (!mounted) return;
         permission = await PermissionHelper.requestLocationPermission(
           context,
-          rationale: 'PUJA24 needs your location to set your address.',
+          rationale: 'PUJO24 needs your location to set your address.',
         );
         if (permission == LocationPermission.denied) {
           if (mounted) {

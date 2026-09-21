@@ -14,10 +14,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:play_install_referrer/play_install_referrer.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/banner_ad_widget.dart';
 import '../../pandals/presentation/providers/puja_list_provider.dart';
 import '../../pandals/presentation/widgets/pandal_card_skeleton.dart';
+import 'widgets/hero_banner_carousel.dart';
 import '../../auth/presentation/providers/auth_provider.dart';
 import '../presentation/providers/home_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -303,103 +305,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // Dynamic Banners
               ref.watch(bannersProvider).when(
                 data: (banners) {
-                  final heroBanners = banners.where((b) => b.bannerType == 'HERO' || b.bannerType == 'PROMO').toList();
+                  final heroBanners = banners;
                   if (heroBanners.isEmpty) return const SizedBox.shrink();
                   
-                  final banner = heroBanners.first;
-                  
-                  return Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.antiqueGold.withOpacity(0.5), width: 1),
-                      image: DecorationImage(
-                        image: CachedNetworkImageProvider(banner.imageUrl),
-                        fit: BoxFit.cover,
-                        alignment: Alignment.centerRight,
-                        colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.4), BlendMode.darken),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 4,
-                              height: 4,
-                              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                            ),
-                            const SizedBox(width: 4),
-                            Container(width: 20, height: 1, color: Colors.red),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          banner.subtitle ?? 'Special Offer',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: AppColors.antiqueGold,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          banner.title,
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            color: AppColors.pureWhite,
-                            fontWeight: FontWeight.bold,
-                            height: 1.2,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            if (banner.actionType == 'NAVIGATE' && banner.actionPayload != null) {
-                              context.push(banner.actionPayload!);
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFF3C77C),
-                            foregroundColor: AppColors.deepMaroon,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                            padding: const EdgeInsets.only(left: 16, right: 8, top: 8, bottom: 8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text('Explore Now', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: AppColors.deepMaroon,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(Icons.arrow_forward_ios, size: 10, color: Colors.white),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        if (heroBanners.length > 1)
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(heroBanners.length, (index) {
-                              return Container(
-                                width: 6,
-                                height: 6,
-                                margin: const EdgeInsets.symmetric(horizontal: 2),
-                                decoration: BoxDecoration(
-                                  color: index == 0 ? Colors.red : Colors.white.withOpacity(0.5),
-                                  shape: BoxShape.circle,
-                                ),
-                              );
-                            }),
-                          )
-                      ],
-                    ),
-                  );
+                  return HeroBannerCarousel(banners: heroBanners);
                 },
                 loading: () => Container(
                   height: 200,

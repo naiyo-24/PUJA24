@@ -56,7 +56,7 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
         if (!mounted) return;
         permission = await PermissionHelper.requestLocationPermission(
           context,
-          rationale: 'PUJA24 requires your location to recommend nearby cafes and restaurants.',
+          rationale: 'PUJO24 requires your location to recommend nearby cafes and restaurants.',
         );
         if (permission == LocationPermission.denied) {
           if (mounted) setState(() => _isLoadingLocation = false);
@@ -128,9 +128,14 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
           }
           return true;
         },
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
+        child: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(foodProvider(locationParams));
+            await Future.delayed(const Duration(milliseconds: 500));
+          },
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
             // ── Sticky Header / Hero Section ────────────────────────────────────────────
           SliverAppBar(
             expandedHeight: 280.0,
@@ -463,6 +468,7 @@ class _CafeDirectoryScreenState extends ConsumerState<CafeDirectoryScreen> {
           ),
         ],
       ),
+      ), // Close RefreshIndicator
       ),
     );
   }

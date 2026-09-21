@@ -73,7 +73,7 @@ class RestaurantDetailScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(8.0),
                 child: GestureDetector(
                   onTap: () {
-                    Share.share('Check out ${restaurant.name} at ${restaurant.area} on PUJA24! \\nRating: ${restaurant.rating}⭐');
+                    Share.share('Check out ${restaurant.name} at ${restaurant.area} on PUJO24! \\nRating: ${restaurant.rating}⭐');
                   },
                   child: Container(
                     padding: const EdgeInsets.all(8),

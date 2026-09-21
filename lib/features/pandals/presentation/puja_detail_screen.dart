@@ -7,6 +7,7 @@ import 'widgets/puja_theme_section.dart';
 import 'widgets/puja_facilities.dart';
 import 'widgets/puja_transit.dart';
 import 'widgets/puja_nearby_places.dart';
+import 'widgets/puja_reviews_section.dart';
 import '../../../../core/theme/app_typography.dart';
 import 'providers/puja_detail_provider.dart';
 import 'providers/save_pandal_provider.dart';
@@ -29,6 +30,21 @@ class PujaDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _PujaDetailScreenState extends ConsumerState<PujaDetailScreen> {
+  int _currentImageIndex = 0;
+  late final PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: 0);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -55,6 +71,9 @@ class _PujaDetailScreenState extends ConsumerState<PujaDetailScreen> {
                   _buildDivider(),
                   _buildDivider(),
                   PujaTransit(puja: puja),
+                  _buildDivider(),
+                  
+                  PujaReviewsSection(puja: puja),
                   _buildDivider(),
                   
                   // Native Ad Integration on Detail Screen
@@ -114,7 +133,7 @@ class _PujaDetailScreenState extends ConsumerState<PujaDetailScreen> {
           icon: const Icon(Icons.share, color: Colors.white),
           onPressed: () {
             final playStoreLink = 'https://play.google.com/store/apps/details?id=com.naiyo24.puja24&referrer=puja_id%3D${puja.id}';
-            Share.share('Check out ${puja.name} at PUJA24! It has a rating of ${puja.rating}.\n\nDownload the app to see more: $playStoreLink');
+            Share.share('Check out ${puja.name} at PUJO24! It has a rating of ${puja.rating}.\n\nDownload the app to see more: $playStoreLink');
           },
         ),
       ],
@@ -122,29 +141,43 @@ class _PujaDetailScreenState extends ConsumerState<PujaDetailScreen> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            puja.imageUrl.startsWith('http') 
-              ? Image.network(
-                  puja.imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: const Color(0xFF2A2A2A),
-                    child: const Center(child: Icon(Icons.image, color: Colors.white54, size: 48)),
-                  ),
+            puja.imageUrls.isNotEmpty 
+              ? PageView.builder(
+                  controller: _pageController,
+                  itemCount: puja.imageUrls.length,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentImageIndex = index;
+                    });
+                  },
+                  itemBuilder: (context, index) {
+                    final imageUrl = puja.imageUrls[index];
+                    return Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: const Color(0xFF2A2A2A),
+                        child: const Center(child: Icon(Icons.image, color: Colors.white54, size: 48)),
+                      ),
+                    );
+                  },
                 )
               : Container(
                   color: const Color(0xFF2A2A2A),
                   child: const Center(child: Icon(Icons.image, color: Colors.white54, size: 48)),
                 ),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.4),
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.6),
-                  ],
+            IgnorePointer(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.4),
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.6),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -162,7 +195,7 @@ class _PujaDetailScreenState extends ConsumerState<PujaDetailScreen> {
                     const Icon(Icons.photo_library, color: Colors.white, size: 16),
                     const SizedBox(width: 4),
                     Text(
-                      '1/${puja.totalPhotos} Photos',
+                      '${_currentImageIndex + 1}/${puja.imageUrls.isEmpty ? 1 : puja.imageUrls.length} Photos',
                       style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ],

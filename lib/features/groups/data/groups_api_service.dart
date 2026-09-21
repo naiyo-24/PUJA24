@@ -290,6 +290,15 @@ class GroupsApiService {
       );
       
       return response.statusCode == 200 || response.statusCode == 204;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 400 && e.response?.data != null) {
+        final detail = e.response?.data['detail'] ?? '';
+        if (detail.toString().contains('Admin cannot leave')) {
+          throw Exception('admin_cannot_leave');
+        }
+      }
+      print('Error leaving group: $e');
+      return false;
     } catch (e) {
       print('Error leaving group: $e');
       return false;

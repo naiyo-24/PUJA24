@@ -1,3 +1,5 @@
+import '../../../../core/network/api_config.dart';
+
 class BannerModel {
   final String id;
   final String title;
@@ -18,12 +20,17 @@ class BannerModel {
   });
 
   factory BannerModel.fromJson(Map<String, dynamic> json) {
+    String img = json['imageUrl'] ?? '';
+    if (img.startsWith('/')) {
+      img = '${ApiConfig.baseUrl}$img';
+    }
+    
     return BannerModel(
       id: json['id'] ?? '',
       title: json['title'] ?? '',
       subtitle: json['subtitle'],
       bannerType: json['bannerType'] ?? 'HERO',
-      imageUrl: json['imageUrl'] ?? '',
+      imageUrl: img,
       actionType: json['actionType'] ?? 'NONE',
       actionPayload: json['actionPayload'],
     );

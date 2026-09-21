@@ -107,7 +107,7 @@ class _OtpScreenState extends State<OtpScreen> {
                               child: Image.asset(
                                 'assets/logo.png',
                                 errorBuilder: (context, error, stackTrace) => 
-                                  Text('PUJA24', style: theme.textTheme.displayMedium?.copyWith(color: AppColors.antiqueGold)),
+                                  Text('PUJO24', style: theme.textTheme.displayMedium?.copyWith(color: AppColors.antiqueGold)),
                               ),
                             ),
                             const SizedBox(height: 8),

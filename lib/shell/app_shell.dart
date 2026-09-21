@@ -60,7 +60,7 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
           ],
         ),
         content: Text(
-          'Are you sure you want to exit PUJA24?',
+          'Are you sure you want to exit PUJO24?',
           style: theme.textTheme.bodyMedium?.copyWith(
             color: isDark ? AppColors.ivory : AppColors.textSecondary,
           ),

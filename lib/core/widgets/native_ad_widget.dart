@@ -71,7 +71,20 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
       width: double.infinity,
       height: widget.height,
       alignment: Alignment.center,
-      child: AdWidget(ad: _nativeAd!),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: AdWidget(ad: _nativeAd!),
+      ),
     );
   }
 }

@@ -44,7 +44,7 @@ void onStart(ServiceInstance service) async {
     if (service is AndroidServiceInstance) {
       if (await service.isForegroundService()) {
         service.setForegroundNotificationInfo(
-          title: "PUJA24",
+          title: "PUJO24",
           content: "Live location sharing is active in ${activeGroupIdsStr.length} group(s)",
         );
       }
@@ -93,7 +93,7 @@ class BackgroundLocationService {
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'puja24_live_location',
       'Live Location Service',
-      description: 'Used for live location sharing in PUJA24',
+      description: 'Used for live location sharing in PUJO24',
       importance: Importance.low,
     );
 
@@ -119,7 +119,7 @@ class BackgroundLocationService {
         autoStart: false,
         isForegroundMode: true,
         notificationChannelId: 'puja24_live_location',
-        initialNotificationTitle: 'PUJA24',
+        initialNotificationTitle: 'PUJO24',
         initialNotificationContent: 'Initializing live location',
         foregroundServiceNotificationId: 888,
       ),

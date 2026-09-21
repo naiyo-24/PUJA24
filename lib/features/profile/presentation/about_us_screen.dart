@@ -102,10 +102,10 @@ class AboutUsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 40),
                   
-                  _buildSectionTitle('About PUJA24', isDark).animate().fade(delay: 300.ms),
+                  _buildSectionTitle('About PUJO24', isDark).animate().fade(delay: 300.ms),
                   const SizedBox(height: 16),
                   Text(
-                    'PUJA24 is the complete solution for experiencing Kolkata Durga Puja seamlessly. With curated pandal routes, exclusive VIP passes, and smart digital navigation, we bring the best of the festival directly to your fingertips.',
+                    'PUJO24 is the complete solution for experiencing Kolkata Durga Puja seamlessly. With curated pandal routes, exclusive VIP passes, and smart digital navigation, we bring the best of the festival directly to your fingertips.',
                     style: TextStyle(
                       fontSize: 15,
                       height: 1.6,

@@ -41,7 +41,7 @@ class _ParkingMapScreenState extends ConsumerState<ParkingMapScreen> {
         if (!mounted) return;
         permission = await PermissionHelper.requestLocationPermission(
           context,
-          rationale: 'PUJA24 requires your location to show you nearby parking zones.',
+          rationale: 'PUJO24 requires your location to show you nearby parking zones.',
         );
         if (permission == LocationPermission.denied) {
           if (mounted) setState(() => _isLoading = false);

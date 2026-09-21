@@ -55,7 +55,9 @@ class PujaBasicInfo extends StatelessWidget {
               const Icon(Icons.location_on, size: 16, color: Colors.grey),
               const SizedBox(width: 4),
               Text(
-                '${puja.area}, Kolkata • ${puja.distance}',
+                puja.distance.isNotEmpty 
+                    ? '${puja.area}, Kolkata • ${puja.distance}'
+                    : '${puja.area}, Kolkata',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: Colors.grey,
                 ),
@@ -66,8 +68,6 @@ class PujaBasicInfo extends StatelessWidget {
           Row(
             children: [
               _buildBadge(context, 'Traditional Puja'),
-              const SizedBox(width: 8),
-              _buildBadge(context, 'Est. 1946'),
             ],
           ),
         ],

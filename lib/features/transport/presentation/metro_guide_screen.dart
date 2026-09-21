@@ -44,7 +44,7 @@ class _MetroGuideScreenState extends State<MetroGuideScreen> {
         if (!mounted) return;
         permission = await PermissionHelper.requestLocationPermission(
           context,
-          rationale: 'PUJA24 requires your location to find the nearest Metro stations to you.',
+          rationale: 'PUJO24 requires your location to find the nearest Metro stations to you.',
         );
         if (permission == LocationPermission.denied) {
           if (mounted) setState(() => _isLoading = false);

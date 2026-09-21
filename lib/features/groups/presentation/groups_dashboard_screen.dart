@@ -511,12 +511,52 @@ class _GroupsDashboardScreenState extends ConsumerState<GroupsDashboardScreen> {
                   onTap: () async {
                     Navigator.pop(context);
                     final api = ref.read(groupsApiServiceProvider);
-                    final success = await api.leaveGroup(group['id']);
-                    if (success) {
-                      ref.invalidate(myGroupsProvider);
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You left the group')));
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to leave group')));
+                    try {
+                      final success = await api.leaveGroup(group['id']);
+                      if (success) {
+                        ref.invalidate(myGroupsProvider);
+                        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You left the group')));
+                      } else {
+                        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to leave group')));
+                      }
+                    } catch (e) {
+                      if (e.toString().contains('admin_cannot_leave')) {
+                        if (context.mounted) {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              backgroundColor: AppColors.charcoal,
+                              title: const Text('Cannot Leave Group', style: TextStyle(color: Colors.white)),
+                              content: const Text(
+                                'You are the Admin of this group. You cannot leave it. Please delete the group instead.',
+                                style: TextStyle(color: Colors.white70),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx),
+                                  child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+                                ),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.errorRed),
+                                  onPressed: () async {
+                                    Navigator.pop(ctx);
+                                    final success = await api.deleteGroup(group['id']);
+                                    if (success) {
+                                      ref.invalidate(myGroupsProvider);
+                                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Group deleted')));
+                                    } else {
+                                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to delete group')));
+                                    }
+                                  },
+                                  child: const Text('Delete Group', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                      } else {
+                        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to leave group')));
+                      }
                     }
                   },
                 ),

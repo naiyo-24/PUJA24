@@ -642,7 +642,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ).animate().fade(duration: 400.ms).slideY(begin: 0.2),
             const SizedBox(height: 32),
             Text(
-              'Need help with PUJA24? Reach out to the Naiyo24 team directly through any of the channels below.',
+              'Need help with PUJO24? Reach out to the Naiyo24 team directly through any of the channels below.',
               style: theme.textTheme.bodyMedium?.copyWith(color: isDark ? Colors.white70 : Colors.black87, height: 1.5),
             ).animate().fade(delay: 200.ms).slideY(begin: 0.1),
             const SizedBox(height: 32),
@@ -794,6 +794,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         child: TextButton.icon(
           onPressed: () async {
             await ref.read(authProvider.notifier).logout();
+            // Clear the riverpod cache for these providers so another user doesn't see them
+            ref.invalidate(savedPandalIdsProvider);
+            ref.invalidate(planPandalIdsProvider);
+            
             if (context.mounted) {
               context.go('/login');
             }
@@ -844,7 +848,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Account', style: TextStyle(color: AppColors.errorRed, fontWeight: FontWeight.bold)),
-        content: const Text('Are you sure you want to completely delete your account? This action cannot be undone and all your data will be permanently removed.'),
+        content: const Text('To request account deletion and permanently remove all your data, please send an email to:\n\nservices.naiyo@gmail.com'),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         backgroundColor: Colors.white,
         actions: [
@@ -853,15 +857,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context).pop(); // Close dialog
-              context.go('/login'); // Navigate to login as if deleted
+              final Uri emailLaunchUri = Uri(
+                scheme: 'mailto',
+                path: 'services.naiyo@gmail.com',
+                query: 'subject=Request for Account Deletion',
+              );
+              if (await canLaunchUrl(emailLaunchUri)) {
+                await launchUrl(emailLaunchUri);
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.errorRed,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text('Send Email', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

@@ -91,7 +91,7 @@ class _ProfileCreationScreenState extends ConsumerState<ProfileCreationScreen> w
   Future<void> _pickImage() async {
     final permission = await PermissionHelper.requestPhotoPermission(
       context,
-      rationale: 'PUJA24 needs access to your photos so you can choose a profile picture.',
+      rationale: 'PUJO24 needs access to your photos so you can choose a profile picture.',
     );
     if (permission.isGranted || permission.isLimited) {
       final picker = ImagePicker();
@@ -124,7 +124,7 @@ class _ProfileCreationScreenState extends ConsumerState<ProfileCreationScreen> w
         if (!mounted) return;
         permission = await PermissionHelper.requestLocationPermission(
           context,
-          rationale: 'PUJA24 needs your location to automatically set your home base.',
+          rationale: 'PUJO24 needs your location to automatically set your home base.',
         );
         if (permission == LocationPermission.denied) {
           throw Exception('Location permissions are denied');
@@ -362,7 +362,7 @@ class _ProfileCreationScreenState extends ConsumerState<ProfileCreationScreen> w
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Personalize your Puja24 experience.',
+                        'Personalize your Pujo24 experience.',
                         style: theme.textTheme.bodyLarge?.copyWith(color: Colors.grey.shade600, fontSize: 16),
                       ),
                     ],

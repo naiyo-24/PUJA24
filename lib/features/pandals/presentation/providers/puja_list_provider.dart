@@ -7,33 +7,56 @@ final popularPujasProvider = FutureProvider<List<PujaDetailModel>>((ref) async {
   final repository = ref.watch(pujaRepositoryProvider);
   double? lat, lng;
   try {
-    final position = await Geolocator.getCurrentPosition(timeLimit: const Duration(seconds: 5));
-    lat = position.latitude;
-    lng = position.longitude;
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+      final position = await Geolocator.getCurrentPosition(timeLimit: const Duration(seconds: 5));
+      lat = position.latitude;
+      lng = position.longitude;
+    }
   } catch (e) {
     // ignore if location fails
   }
   return repository.getPandals(isPopular: true, lat: lat, lng: lng);
 });
 
+final pandalSearchQueryProvider = StateProvider<String>((ref) => '');
+
 final filteredPujasProvider = FutureProvider.family<List<PujaDetailModel>, String>((ref, area) async {
   final repository = ref.watch(pujaRepositoryProvider);
   double? lat, lng;
   try {
-    final position = await Geolocator.getCurrentPosition(timeLimit: const Duration(seconds: 5));
-    lat = position.latitude;
-    lng = position.longitude;
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+      final position = await Geolocator.getCurrentPosition(timeLimit: const Duration(seconds: 5));
+      lat = position.latitude;
+      lng = position.longitude;
+    }
   } catch (e) {
-    // ignore
+    // ignore location errors
   }
   
+  final searchQuery = ref.watch(pandalSearchQueryProvider).toLowerCase();
+  List<PujaDetailModel> pandals;
+
   if (area == 'All' || area.isEmpty) {
-    return repository.getPandals(lat: lat, lng: lng);
+    pandals = await repository.getPandals(lat: lat, lng: lng);
   } else if (area == 'Popular') {
-    return repository.getPandals(isPopular: true, lat: lat, lng: lng);
+    pandals = await repository.getPandals(isPopular: true, lat: lat, lng: lng);
   } else {
-    return repository.getPandals(area: area, lat: lat, lng: lng);
+    pandals = await repository.getPandals(area: area, lat: lat, lng: lng);
   }
+
+  if (searchQuery.isNotEmpty) {
+    return pandals.where((p) => p.name.toLowerCase().contains(searchQuery) || p.area.toLowerCase().contains(searchQuery)).toList();
+  }
+  
+  return pandals;
 });
 
 final nearbyPandalsProvider = FutureProvider<List<PujaDetailModel>>((ref) async {

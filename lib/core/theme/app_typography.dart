@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
-/// Central Typography System for PUJA24
+/// Central Typography System for PUJO24
 class AppTypography {
   AppTypography._();
 

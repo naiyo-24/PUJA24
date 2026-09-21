@@ -57,7 +57,7 @@ class TermsOfServiceScreen extends StatelessWidget {
             _buildSection(
               theme,
               title: '1. Acceptance of Terms',
-              content: 'By accessing and using the PUJA24 application, you accept and agree to be bound by the terms and provisions of this agreement. If you do not agree to abide by these terms, please do not use this application.',
+              content: 'By accessing and using the PUJO24 application, you accept and agree to be bound by the terms and provisions of this agreement. If you do not agree to abide by these terms, please do not use this application.',
               delayMs: 400,
               textColor: textColor,
             ),
@@ -71,14 +71,14 @@ class TermsOfServiceScreen extends StatelessWidget {
             _buildSection(
               theme,
               title: '3. Intellectual Property',
-              content: 'All original content, features, and functionality of this app (including but not limited to text, graphics, logos, and software) are owned by PUJA24 and are protected by international copyright and intellectual property laws.',
+              content: 'All original content, features, and functionality of this app (including but not limited to text, graphics, logos, and software) are owned by PUJO24 and are protected by international copyright and intellectual property laws.',
               delayMs: 600,
               textColor: textColor,
             ),
             _buildSection(
               theme,
               title: '4. Limitation of Liability',
-              content: 'PUJA24 serves as a guide for navigating Durga Puja in Kolkata. We are not liable for any changes to pandal schedules, crowd density inaccuracies, or physical injuries incurred while navigating the city.',
+              content: 'PUJO24 serves as a guide for navigating Durga Puja in Kolkata. We are not liable for any changes to pandal schedules, crowd density inaccuracies, or physical injuries incurred while navigating the city.',
               delayMs: 700,
               textColor: textColor,
             ),

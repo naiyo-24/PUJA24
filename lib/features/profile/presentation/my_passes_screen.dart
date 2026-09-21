@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../home/presentation/providers/pass_provider.dart';
@@ -19,6 +20,7 @@ class MyPassesScreen extends ConsumerWidget {
     const goldColor = Color(0xFFD4A24C);
     
     final vouchersState = ref.watch(myVouchersProvider);
+    final packagesState = ref.watch(availablePassesProvider);
     final authState = ref.watch(authProvider);
     final userName = authState is Authenticated ? authState.user.fullName : 'Guest';
 
@@ -72,6 +74,10 @@ class MyPassesScreen extends ConsumerWidget {
                 }
                 final voucher = vouchers[index];
                 final isRedeemed = voucher.status.toLowerCase() == 'redeemed';
+                
+                final packages = packagesState.valueOrNull ?? [];
+                final package = packages.where((p) => p.id == voucher.packageId).firstOrNull;
+                final collectionVenue = package?.collectionVenue ?? 'PUJO24 HQ, Park Street, Kolkata';
 
                 return Container(
                   decoration: BoxDecoration(
@@ -159,14 +165,39 @@ class MyPassesScreen extends ConsumerWidget {
                           const SizedBox(height: 24),
                           const Divider(color: Colors.white24),
                           const SizedBox(height: 16),
-                          const Row(
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(Icons.location_on, color: Colors.redAccent, size: 20),
-                              SizedBox(width: 8),
+                              const Icon(Icons.location_on, color: Colors.redAccent, size: 20),
+                              const SizedBox(width: 8),
                               Expanded(
-                                child: Text(
-                                  'Collection Venue: PUJA24 HQ, Park Street, Kolkata. Show this screen at the counter.',
-                                  style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Collection Venue: $collectionVenue. Show this screen at the counter.',
+                                      style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                                    ),
+                                    if (package?.collectionVenueMapUrl != null && package!.collectionVenueMapUrl!.isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      InkWell(
+                                        onTap: () async {
+                                          final url = Uri.parse(package.collectionVenueMapUrl!);
+                                          if (await canLaunchUrl(url)) {
+                                            await launchUrl(url);
+                                          }
+                                        },
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.map, size: 16, color: goldColor),
+                                            const SizedBox(width: 6),
+                                            Text('View on Map', style: TextStyle(color: goldColor, fontWeight: FontWeight.bold, fontSize: 13)),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ),
                             ],
