@@ -174,27 +174,74 @@ class MyPassesScreen extends ConsumerWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      'Collection Venue: $collectionVenue. Show this screen at the counter.',
-                                      style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
-                                    ),
-                                    if (package?.collectionVenueMapUrl != null && package!.collectionVenueMapUrl!.isNotEmpty) ...[
+                                    if (package != null) ...[
+                                      const Text(
+                                        'Collection Venues (Show this screen at the counter):',
+                                        style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4, fontWeight: FontWeight.bold),
+                                      ),
                                       const SizedBox(height: 8),
-                                      InkWell(
-                                        onTap: () async {
-                                          final url = Uri.parse(package.collectionVenueMapUrl!);
-                                          if (await canLaunchUrl(url)) {
-                                            await launchUrl(url);
-                                          }
-                                        },
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.map, size: 16, color: goldColor),
-                                            const SizedBox(width: 6),
-                                            Text('View on Map', style: TextStyle(color: goldColor, fontWeight: FontWeight.bold, fontSize: 13)),
-                                          ],
+                                      if (package.collectionVenue.isNotEmpty) ...[
+                                        Text(
+                                          '1. ${package.collectionVenue}',
+                                          style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
                                         ),
+                                        if (package.collectionVenueMapUrl != null && package.collectionVenueMapUrl!.isNotEmpty) ...[
+                                          const SizedBox(height: 4),
+                                          InkWell(
+                                            onTap: () async {
+                                              final url = Uri.parse(package.collectionVenueMapUrl!);
+                                              if (await canLaunchUrl(url)) {
+                                                await launchUrl(url);
+                                              }
+                                            },
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.map, size: 16, color: goldColor),
+                                                const SizedBox(width: 6),
+                                                Text('View on Map', style: TextStyle(color: goldColor, fontWeight: FontWeight.bold, fontSize: 13)),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                      if (package.collectionVenue2 != null && package.collectionVenue2!.isNotEmpty) ...[
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          '2. ${package.collectionVenue2}',
+                                          style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                                        ),
+                                        if (package.collectionVenueMapUrl2 != null && package.collectionVenueMapUrl2!.isNotEmpty) ...[
+                                          const SizedBox(height: 4),
+                                          InkWell(
+                                            onTap: () async {
+                                              final url = Uri.parse(package.collectionVenueMapUrl2!);
+                                              if (await canLaunchUrl(url)) {
+                                                await launchUrl(url);
+                                              }
+                                            },
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.map, size: 16, color: goldColor),
+                                                const SizedBox(width: 6),
+                                                Text('View on Map', style: TextStyle(color: goldColor, fontWeight: FontWeight.bold, fontSize: 13)),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                      if (package.collectionInfoNote != null && package.collectionInfoNote!.isNotEmpty) ...[
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          package.collectionInfoNote!,
+                                          style: const TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ] else ...[
+                                      const Text(
+                                        'Collection Venue: PUJO24 HQ, Park Street, Kolkata. Show this screen at the counter.',
+                                        style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
                                       ),
                                     ],
                                   ],

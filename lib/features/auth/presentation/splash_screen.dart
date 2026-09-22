@@ -43,13 +43,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         children: [
           // Full-screen background image with a glowing/shimmering effect
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/splash.png',
-              fit: BoxFit.cover,
-            )
-            .animate(onPlay: (controller) => controller.repeat(reverse: true))
-            .shimmer(duration: 2500.ms, color: Colors.white24, angle: 1.0) // A beautiful sweeping glass shine
-            .fade(duration: 1000.ms, curve: Curves.easeIn), // Smooth fade in
+            child: Container(
+              color: AppColors.deepMaroon,
+              alignment: Alignment.topCenter,
+              child: Image.asset(
+                'assets/images/splash.png',
+                fit: BoxFit.fitWidth,
+                width: double.infinity,
+                alignment: Alignment.topCenter,
+              )
+              .animate(onPlay: (controller) => controller.repeat(reverse: true))
+              .shimmer(duration: 2500.ms, color: Colors.white24, angle: 1.0)
+              .fade(duration: 1000.ms, curve: Curves.easeIn),
+            ),
           ),
           
           // Wave Animation and Loading Text at the bottom

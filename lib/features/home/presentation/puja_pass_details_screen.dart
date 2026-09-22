@@ -94,8 +94,8 @@ class PujaPassDetailsScreen extends ConsumerWidget {
                 const SizedBox(height: 20),
                 _buildFeatureRow(
                   Icons.location_on, 
-                  'Physical Pass Collection', 
-                  package.collectionVenue.isNotEmpty ? 'Collect from: ${package.collectionVenue}' : 'Show digital proof at HQ to collect passes', 
+                  'Physical Pass Collection (Option 1)', 
+                  package.collectionVenue.isNotEmpty ? package.collectionVenue : 'Show digital proof at HQ to collect passes', 
                   goldColor,
                   action: (package.collectionVenueMapUrl != null && package.collectionVenueMapUrl!.isNotEmpty)
                       ? InkWell(
@@ -116,6 +116,61 @@ class PujaPassDetailsScreen extends ConsumerWidget {
                         )
                       : null,
                 ),
+                if (package.collectionVenue2 != null && package.collectionVenue2!.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  _buildFeatureRow(
+                    Icons.location_on, 
+                    'Physical Pass Collection (Option 2)', 
+                    package.collectionVenue2!, 
+                    goldColor,
+                    action: (package.collectionVenueMapUrl2 != null && package.collectionVenueMapUrl2!.isNotEmpty)
+                        ? InkWell(
+                            onTap: () async {
+                              final url = Uri.parse(package.collectionVenueMapUrl2!);
+                              if (await canLaunchUrl(url)) {
+                                await launchUrl(url);
+                              }
+                            },
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.map, size: 16, color: goldColor),
+                                const SizedBox(width: 6),
+                                Text('View on Map', style: TextStyle(color: goldColor, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          )
+                        : null,
+                  ),
+                ],
+                
+                if (package.collectionInfoNote != null && package.collectionInfoNote!.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline, color: Colors.redAccent, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            package.collectionInfoNote!,
+                            style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 
                 const SizedBox(height: 32),
                 const Text(

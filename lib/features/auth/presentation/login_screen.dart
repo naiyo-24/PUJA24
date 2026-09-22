@@ -52,94 +52,107 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         children: [
           // Background Image
           Positioned.fill(
-            child: Image.asset(
-              'assets/login.png',
-              fit: BoxFit.cover,
+            child: Container(
+              color: AppColors.deepMaroon,
+              alignment: Alignment.topCenter,
+              child: Image.asset(
+                'assets/login.png',
+                fit: BoxFit.fitWidth,
+                width: double.infinity,
+                alignment: Alignment.topCenter,
+              ),
             ),
           ),
           
           // Form Content
           SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return SingleChildScrollView(
-                  physics: const NeverScrollableScrollPhysics(),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: IntrinsicHeight(
-                        child: Column(
-                          children: [
-                            // Animate the spacing to smoothly move the form slightly up
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeOut,
-                              height: absoluteScreenHeight * 0.42, // Shifted up to center inside the red arch
-                            ),
-                            
-                            // Logo always visible but shrinks slightly
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeOut,
-                              height: 110, // Made logo slightly larger
-                              child: Image.asset(
-                                'assets/logo.png',
-                                errorBuilder: (context, error, stackTrace) => 
-                                  Text('PUJO24', style: theme.textTheme.displayMedium?.copyWith(color: AppColors.antiqueGold)),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            
-                            Text(
-                              'Welcome Back!',
-                              style: theme.textTheme.displaySmall?.copyWith(color: AppColors.ivory, fontSize: 26, fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Sign in to continue your spiritual journey',
-                              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.ivory.withOpacity(0.8), fontSize: 13),
-                            ),
-                            const SizedBox(height: 32),
-                            
-                            // Google Login Button
-                              SizedBox(
-                                width: double.infinity,
-                                height: 48,
-                                child: authState is AuthLoading 
-                                ? const Center(child: CircularProgressIndicator(color: AppColors.ivory))
-                                : ElevatedButton(
-                                  onPressed: () {
-                                    ref.read(authProvider.notifier).signInWithGoogle();
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.ivory,
-                                    padding: EdgeInsets.zero,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(24),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Image.asset('assets/icons/social/google.png', height: 22, width: 22),
-                                      const SizedBox(width: 12),
-                                      const Text('Continue with Google', style: TextStyle(color: AppColors.charcoal, fontSize: 14, fontWeight: FontWeight.bold)),
-                                    ],
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 450), // Max width for tablet screens
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      physics: const NeverScrollableScrollPhysics(),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                          child: IntrinsicHeight(
+                            child: Column(
+                              children: [
+                                // Animate the spacing to smoothly move the form slightly up
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeOut,
+                                  height: MediaQuery.of(context).size.width > 600 
+                                      ? absoluteScreenHeight * 0.62 // Push down further on iPads
+                                      : absoluteScreenHeight * 0.42, // Shifted up to center inside the red arch
+                                ),
+                                
+                                // Logo always visible but shrinks slightly
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeOut,
+                                  height: 110, // Made logo slightly larger
+                                  child: Image.asset(
+                                    'assets/logo.png',
+                                    errorBuilder: (context, error, stackTrace) => 
+                                      Text('PUJO24', style: theme.textTheme.displayMedium?.copyWith(color: AppColors.antiqueGold)),
                                   ),
                                 ),
-                              ),
-                              
-                              const SizedBox(height: 16),
-                            ],
+                                const SizedBox(height: 12),
+                                
+                                Text(
+                                  'Welcome Back!',
+                                  style: theme.textTheme.displaySmall?.copyWith(color: AppColors.ivory, fontSize: 26, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Sign in to continue your spiritual journey',
+                                  style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.ivory.withOpacity(0.8), fontSize: 13),
+                                ),
+                                const SizedBox(height: 32),
+                                
+                                // Google Login Button
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 48,
+                                    child: authState is AuthLoading 
+                                    ? const Center(child: CircularProgressIndicator(color: AppColors.ivory))
+                                    : ElevatedButton(
+                                      onPressed: () {
+                                        ref.read(authProvider.notifier).signInWithGoogle();
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.ivory,
+                                        padding: EdgeInsets.zero,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(24),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Image.asset('assets/icons/social/google.png', height: 22, width: 22),
+                                          const SizedBox(width: 12),
+                                          const Text('Continue with Google', style: TextStyle(color: AppColors.charcoal, fontSize: 14, fontWeight: FontWeight.bold)),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  
+                                  const SizedBox(height: 16),
+                                ],
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                );
-              },
+                    );
+                  },
+                ),
+              ),
             ),
           ),
         ],
