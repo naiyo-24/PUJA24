@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class AdvertisementDetailsScreen extends StatefulWidget {
@@ -158,7 +159,12 @@ class _AdvertisementDetailsScreenState extends State<AdvertisementDetailsScreen>
               leading: const CircleAvatar(backgroundColor: AppColors.saffron, child: Icon(Icons.phone, color: Colors.white)),
               title: const Text('8335918932'),
               subtitle: const Text('Call us for bookings'),
-              onTap: () {},
+              onTap: () async {
+                final Uri url = Uri.parse('tel:8335918932');
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url);
+                }
+              },
             ),
             const SizedBox(height: 40),
           ],
