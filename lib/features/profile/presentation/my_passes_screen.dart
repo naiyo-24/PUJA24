@@ -234,7 +234,7 @@ class MyPassesScreen extends ConsumerWidget {
                                       if (package.collectionInfoNote != null && package.collectionInfoNote!.isNotEmpty) ...[
                                         const SizedBox(height: 12),
                                         Text(
-                                          package.collectionInfoNote!,
+                                          'Important Note: ${package.collectionInfoNote!}',
                                           style: const TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.bold),
                                         ),
                                       ],

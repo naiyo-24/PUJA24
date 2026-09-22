@@ -156,15 +156,8 @@ class _AdvertisementDetailsScreenState extends State<AdvertisementDetailsScreen>
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const CircleAvatar(backgroundColor: AppColors.saffron, child: Icon(Icons.phone, color: Colors.white)),
-              title: const Text('+91 98765 43210'),
+              title: const Text('8335918932'),
               subtitle: const Text('Call us for bookings'),
-              onTap: () {},
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const CircleAvatar(backgroundColor: AppColors.saffron, child: Icon(Icons.email, color: Colors.white)),
-              title: const Text('ads@puja24.com'),
-              subtitle: const Text('Email us for inquiries'),
               onTap: () {},
             ),
             const SizedBox(height: 40),
