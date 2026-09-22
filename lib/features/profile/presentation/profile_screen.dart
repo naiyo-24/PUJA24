@@ -288,9 +288,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         elevation: 0,
         actions: [],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(authProvider);
+          await Future.delayed(const Duration(milliseconds: 500));
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
             const SizedBox(height: 16),
             _buildProfileHeader(theme, context),
             if (authState is Authenticated && authState.user.address != null && authState.user.address!.isNotEmpty)
@@ -317,6 +323,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ],
         ),
       ),
+      ), // Close RefreshIndicator
     );
   }
 

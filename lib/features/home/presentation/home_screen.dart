@@ -156,9 +156,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         backgroundColor: isDark ? AppColors.deepMaroon : AppColors.ivory,
         body: SafeArea(
         bottom: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(popularPujasProvider);
+            ref.invalidate(bannersProvider);
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
@@ -447,7 +453,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           },
                           child: Padding(
                             padding: const EdgeInsets.only(bottom: 8.0), // give room for shadow
-                            child: _PandalCard(name: pandal.name, distance: pandal.distance, rating: pandal.rating),
+                            child: _PandalCard(name: pandal.name, distance: pandal.distance, rating: pandal.rating, imageUrl: pandal.imageUrl),
                           ),
                         );
                       }).toList(),
@@ -626,6 +632,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ],
           ),
         ),
+        ),
       ),
     );
   }
@@ -693,11 +700,13 @@ class _PandalCard extends StatelessWidget {
   final String name;
   final String distance;
   final String rating;
+  final String? imageUrl;
 
   const _PandalCard({
     required this.name,
     required this.distance,
     required this.rating,
+    this.imageUrl,
   });
 
   @override
@@ -726,11 +735,22 @@ class _PandalCard extends StatelessWidget {
             children: [
               Container(
                 height: 120,
+                width: double.infinity,
                 decoration: const BoxDecoration(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                   color: AppColors.border,
                 ),
-                child: const Center(child: Icon(Icons.image, color: AppColors.mutedGray)),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  child: imageUrl != null && imageUrl!.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: imageUrl!,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                          errorWidget: (context, url, error) => const Center(child: Icon(Icons.image, color: AppColors.mutedGray)),
+                        )
+                      : const Center(child: Icon(Icons.image, color: AppColors.mutedGray)),
+                ),
               ),
               Positioned(
                 top: 8,

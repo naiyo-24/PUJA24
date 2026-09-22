@@ -14,21 +14,31 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   BannerAd? _bannerAd;
   bool _isAdLoaded = false;
   bool _isAdError = false;
+  bool _isLoading = false;
 
   @override
-  void initState() {
-    super.initState();
-    _loadAd();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isAdLoaded && !_isAdError && _bannerAd == null && !_isLoading) {
+      _loadAd();
+    }
   }
 
-  void _loadAd() {
+  Future<void> _loadAd() async {
+    _isLoading = true;
+    final adSize = AdSize.banner;
+    
+    if (!mounted) return;
+
     _bannerAd = AdService().createBannerAd(
       adUnitId: widget.adUnitId,
+      size: adSize,
       onAdLoaded: () {
         if (mounted) {
           setState(() {
             _isAdLoaded = true;
             _isAdError = false;
+            _isLoading = false;
           });
         }
       },
@@ -37,6 +47,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
           setState(() {
             _isAdLoaded = false;
             _isAdError = true;
+            _isLoading = false;
           });
         }
       },

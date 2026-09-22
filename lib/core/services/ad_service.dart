@@ -37,10 +37,10 @@ class AdService {
     return '';
   }
 
-  BannerAd createBannerAd({String? adUnitId, required VoidCallback onAdLoaded, required void Function(LoadAdError) onAdFailedToLoad}) {
+  BannerAd createBannerAd({String? adUnitId, AdSize size = AdSize.banner, required VoidCallback onAdLoaded, required void Function(LoadAdError) onAdFailedToLoad}) {
     return BannerAd(
       adUnitId: adUnitId ?? bannerAdUnitId,
-      size: AdSize.banner,
+      size: size,
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (ad) => onAdLoaded(),

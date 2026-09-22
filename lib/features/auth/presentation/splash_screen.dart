@@ -56,7 +56,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
           Positioned(
             left: 0,
             right: 0,
-            bottom: 90,
+            bottom: 25,
             child: Column(
               children: [
                 // Stagger Wave Animation (vertical bars)

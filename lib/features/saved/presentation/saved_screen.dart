@@ -31,9 +31,14 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
 
     return Scaffold(
       backgroundColor: bgColor,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(savedItemsProvider);
+          await Future.delayed(const Duration(milliseconds: 500));
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
           // ── Header ──────────────────────────────────────────────────────
           SliverAppBar(
             leading: IconButton(
@@ -182,6 +187,7 @@ class _SavedScreenState extends ConsumerState<SavedScreen> {
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
+      ), // Close RefreshIndicator
     );
   }
 
