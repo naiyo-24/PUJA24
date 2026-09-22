@@ -111,6 +111,9 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
       await ref.read(authProvider.notifier).setPujaPassPurchased();
       
       if (mounted) {
+        setState(() {
+          _pujaPoints = 0; // Reset points after redemption
+        });
         _showPassDetailsSheet(context, AppColors.antiqueGold, response['pass_id'] ?? 'test_pass_id', userName);
       }
     } catch (e) {
@@ -316,7 +319,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
   }
 
   Widget _buildRedeemSection() {
-    final canRedeem = true; // Bypass for testing: _pujaPoints >= 1000;
+    final canRedeem = _pujaPoints >= 1000;
     
     return Card(
       elevation: 4,

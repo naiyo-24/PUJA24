@@ -15,6 +15,7 @@ import 'widgets/map_location_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../pandals/presentation/providers/save_pandal_provider.dart';
 import '../../pandals/presentation/providers/plan_pandal_provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -27,11 +28,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String? _profileImagePath;
   String _name = 'User Name';
   String _phone = 'Add Phone Number';
+  String _appVersion = '';
 
   @override
   void initState() {
     super.initState();
     _loadProfileImage();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    setState(() {
+      _appVersion = 'Version ${info.version}';
+    });
   }
 
   Future<void> _loadProfileImage() async {
@@ -316,7 +326,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _buildDeleteAccountButton(context, theme),
             const SizedBox(height: 16),
             Text(
-              'Version 1.0.0',
+              _appVersion,
               style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
             ),
             const SizedBox(height: 140), // Increased padding to fully clear custom bottom nav bar

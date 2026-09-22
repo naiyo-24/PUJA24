@@ -53,9 +53,15 @@ class _PujaDetailScreenState extends ConsumerState<PujaDetailScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppColors.charcoal : AppColors.ivory,
       body: pujaAsyncValue.when(
-        data: (puja) => CustomScrollView(
-          slivers: [
-            _buildHeroGallery(context, puja),
+        data: (puja) => RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(pujaDetailProvider(widget.id));
+            await Future.delayed(const Duration(milliseconds: 500));
+          },
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              _buildHeroGallery(context, puja),
             SliverToBoxAdapter(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,6 +90,7 @@ class _PujaDetailScreenState extends ConsumerState<PujaDetailScreen> {
               ),
             ),
           ],
+        ),
         ),
         loading: () => const PujaDetailSkeleton(),
         error: (error, stack) => Center(
@@ -148,14 +155,19 @@ class _PujaDetailScreenState extends ConsumerState<PujaDetailScreen> {
                   },
                   itemBuilder: (context, index) {
                     final imageUrl = puja.imageUrls[index];
-                    return Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: const Color(0xFF2A2A2A),
-                        child: const Center(child: Icon(Icons.image, color: Colors.white54, size: 48)),
-                      ),
-                    );
+                    return imageUrl.startsWith('http')
+                      ? Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: const Color(0xFF2A2A2A),
+                            child: const Center(child: Icon(Icons.image, color: Colors.white54, size: 48)),
+                          ),
+                        )
+                      : Container(
+                          color: const Color(0xFF2A2A2A),
+                          child: const Center(child: Icon(Icons.image, color: Colors.white54, size: 48)),
+                        );
                   },
                 )
               : Container(
