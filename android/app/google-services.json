@@ -12,7 +12,36 @@
           "package_name": "com.naiyo24.puja24"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "16874042850-7n2qj6c672v4ib788rhfacgi2et0b0ja.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.naiyo24.puja24",
+            "certificate_hash": "b2603fbddc2ea8a6c19cc8356cc65dae65c4defe"
+          }
+        },
+        {
+          "client_id": "16874042850-o52ei2v7lgr76af2vp929jgdvge4pq7v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.naiyo24.puja24",
+            "certificate_hash": "31c9c3f0e714fd577c72bb50ef1d6cca7d06509d"
+          }
+        },
+        {
+          "client_id": "16874042850-skl08lkrq39hsspfq0m4bt5va501n83f.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.naiyo24.puja24",
+            "certificate_hash": "0e7683dca596723b0fddcfc85216b2423a9ab827"
+          }
+        },
+        {
+          "client_id": "16874042850-a2cumknkn0ntcidh5arkae32gle5vni4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAbIs_YOO3qUIeqNj08BRMpUHi0EdaV9kw"
@@ -20,7 +49,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "16874042850-a2cumknkn0ntcidh5arkae32gle5vni4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "16874042850-vb4tg3a3tfi541ojpo635aokc11688f5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.naiyo24.puja24"
+              }
+            }
+          ]
         }
       }
     }
