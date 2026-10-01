@@ -14,11 +14,27 @@
       },
       "oauth_client": [
         {
+          "client_id": "16874042850-0u83bccv3671tb47sggk62elg1u287rg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.naiyo24.puja24",
+            "certificate_hash": "c8c12a919fe93135c3df1948183179f17d84c727"
+          }
+        },
+        {
           "client_id": "16874042850-7n2qj6c672v4ib788rhfacgi2et0b0ja.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.naiyo24.puja24",
             "certificate_hash": "b2603fbddc2ea8a6c19cc8356cc65dae65c4defe"
+          }
+        },
+        {
+          "client_id": "16874042850-jsde78nvk33s08fi63hvvkf1k2lmej53.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.naiyo24.puja24",
+            "certificate_hash": "d2db3c3cf83a63912423267e7d2afbca3af2b781"
           }
         },
         {

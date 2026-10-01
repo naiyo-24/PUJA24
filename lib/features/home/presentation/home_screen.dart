@@ -247,9 +247,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              // Search Bar removed per user request
-              const SizedBox(height: 24),
-
               // Banner
               GestureDetector(
                 onTap: () => context.push('/puja-pass'),
@@ -263,6 +260,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+
               
 
 
