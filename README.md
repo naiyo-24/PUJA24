@@ -10,62 +10,63 @@ A comprehensive Flutter application designed to enhance the Durga Puja experienc
 
 ## 📖 Table of Contents
 
-- [Project Overview](#project-overview)
-- [Tech Stack](#tech-stack)
-- [Prerequisites](#prerequisites)
-- [Getting Started](#getting-started)
-- [Environment Configuration](#environment-configuration)
-- [Project Structure](#project-structure)
-- [Architecture Deep Dive](#architecture-deep-dive)
-  - [Layered Architecture](#layered-architecture)
-  - [Data Flow Diagram](#data-flow-diagram)
-- [State Management (Riverpod)](#state-management-riverpod)
-  - [Provider ↔ Notifier Pattern](#provider--notifier-pattern)
-- [Models Layer](#models-layer)
-- [Services Layer](#services-layer)
-  - [API Service (GraphQL & Dio)](#api-service-graphql--dio)
-  - [Auth Service](#auth-service)
-  - [WebSocket Service](#websocket-service)
-  - [Location & Map Services](#location--map-services)
-- [Routing (GoRouter)](#routing-gorouter)
-- [Theming System](#theming-system)
-- [Feature Modules](#feature-modules)
-  - [Authentication Flow](#authentication-flow)
-  - [Pandal Discovery & Planner](#pandal-discovery--planner)
-  - [Group Planning](#group-planning)
-  - [Food & Transport](#food--transport)
-  - [Puja Passes](#puja-passes)
-- [Backend API Contract](#backend-api-contract)
-- [Real-Time Communication](#real-time-communication)
-- [Firebase Integration](#firebase-integration)
-- [Key Design Decisions](#key-design-decisions)
-- [Common Gotchas](#common-gotchas)
-- [Adding a New Feature](#adding-a-new-feature)
-- [Contributing](#contributing)
-- [License](#license)
+- [Project Overview](https://github.com/naiyo-24/PUJA24#project-overview)
+- [Tech Stack](https://github.com/naiyo-24/PUJA24#tech-stack)
+- [Prerequisites](https://github.com/naiyo-24/PUJA24#prerequisites)
+- [Getting Started](https://github.com/naiyo-24/PUJA24#getting-started)
+- [Environment Configuration](https://github.com/naiyo-24/PUJA24#environment-configuration)
+- [Project Structure](https://github.com/naiyo-24/PUJA24#project-structure)
+- [Architecture Deep Dive](https://github.com/naiyo-24/PUJA24#architecture-deep-dive)
+  - [Layered Architecture](https://github.com/naiyo-24/PUJA24#layered-architecture)
+  - [Data Flow Diagram](https://github.com/naiyo-24/PUJA24#data-flow-diagram)
+- [State Management (Riverpod)](https://github.com/naiyo-24/PUJA24#state-management-riverpod)
+  - [Provider ↔ Notifier Pattern](https://github.com/naiyo-24/PUJA24#provider--notifier-pattern)
+- [Models Layer](https://github.com/naiyo-24/PUJA24#models-layer)
+- [Services Layer](https://github.com/naiyo-24/PUJA24#services-layer)
+  - [API Service (GraphQL & Dio)](https://github.com/naiyo-24/PUJA24#api-service-graphql--dio)
+  - [Auth Service](https://github.com/naiyo-24/PUJA24#auth-service)
+  - [WebSocket Service](https://github.com/naiyo-24/PUJA24#websocket-service)
+  - [Location & Map Services](https://github.com/naiyo-24/PUJA24#location--map-services)
+- [Routing (GoRouter)](https://github.com/naiyo-24/PUJA24#routing-gorouter)
+- [Theming System](https://github.com/naiyo-24/PUJA24#theming-system)
+- [Feature Modules](https://github.com/naiyo-24/PUJA24#feature-modules)
+  - [Authentication Flow](https://github.com/naiyo-24/PUJA24#authentication-flow)
+  - [Pandal Discovery & Planner](https://github.com/naiyo-24/PUJA24#pandal-discovery--planner)
+  - [Group Planning](https://github.com/naiyo-24/PUJA24#group-planning)
+  - [Food & Transport](https://github.com/naiyo-24/PUJA24#food--transport)
+  - [Puja Passes](https://github.com/naiyo-24/PUJA24#puja-passes)
+- [Backend API Contract](https://github.com/naiyo-24/PUJA24#backend-api-contract)
+- [Real-Time Communication](https://github.com/naiyo-24/PUJA24#real-time-communication)
+- [Firebase Integration](https://github.com/naiyo-24/PUJA24#firebase-integration)
+- [Key Design Decisions](https://github.com/naiyo-24/PUJA24#key-design-decisions)
+- [Common Gotchas](https://github.com/naiyo-24/PUJA24#common-gotchas)
+- [Adding a New Feature](https://github.com/naiyo-24/PUJA24#adding-a-new-feature)
+- [Contributing](https://github.com/naiyo-24/PUJA24#contributing)
+- [License](https://github.com/naiyo-24/PUJA24#license)
 
 ## Project Overview
-PUJO24 is designed to simplify and enhance the festival experience. From mapping out pandal routes and booking VIP passes to tracking group members in real-time using WebSockets, this app acts as a powerful companion app during Durga Puja.
+PUJO24 is designed to simplify and enhance the festival experience. It is a one-stop companion app for Durga Puja. During the peak of the festival, coordination among friends, discovering new pandals, finding nearby food stalls, and securing VIP passes become logistical challenges. PUJO24 solves this by offering real-time tracking of groups on a live map via WebSockets, deep integration with Google Maps for location services and route guidance, and a comprehensive database of pandals and food options. The app is built with a strong focus on modularity and performance, utilizing Flutter for a beautiful cross-platform UI and Riverpod for reactive state management.
 
 ## Tech Stack
 - **Framework**: Flutter (SDK: ^3.12.2)
-- **State Management**: Riverpod (`flutter_riverpod`)
-- **Routing**: GoRouter
-- **Networking**: Dio (REST) & GraphQL (`graphql_service.dart`) & WebSockets
-- **Backend/Services**: Firebase (Auth, Core), Google Maps, Google Places API
-- **UI & Animations**: `flutter_animate`, `google_nav_bar`, `curved_navigation_bar`, `shimmer`
+- **State Management**: Riverpod (`flutter_riverpod`) for compile-safe, robust dependency injection and state reactivity.
+- **Routing**: GoRouter for declarative, path-based routing.
+- **Networking**: Dio for REST API calls & `graphql_flutter`/custom implementation for GraphQL interactions. WebSockets are used for real-time telemetry.
+- **Backend/Services**: Firebase (Auth, Core), Google Maps Platform, Google Places API.
+- **UI & Animations**: `flutter_animate` for micro-interactions, `google_nav_bar` and `curved_navigation_bar` for fluid navigation, `shimmer` for skeleton loading states.
+- **Payments**: Razorpay for VIP Puja Passes transactions.
 
 ## Prerequisites
 - Flutter SDK (>= 3.12.2)
 - Dart SDK
-- Android Studio / VS Code
-- A valid Firebase project configuration (`google-services.json` / `GoogleService-Info.plist`)
-- Google Maps API key
+- Android Studio / VS Code with Flutter extensions installed
+- A valid Firebase project configuration (`google-services.json` for Android / `GoogleService-Info.plist` for iOS)
+- Google Maps API key with Places and Directions API enabled
 
 ## Getting Started
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/naiyo-24/PUJA24.git
    cd PUJA24
    ```
 2. **Install dependencies**
@@ -78,13 +79,15 @@ PUJO24 is designed to simplify and enhance the festival experience. From mapping
    ```
 
 ## Environment Configuration
-Create a `.env` file in the root directory and configure the environment variables:
+Create a `.env` file in the root directory and configure the environment variables carefully. Ensure this file is never committed to version control.
 ```env
-# Example .env configuration
-API_BASE_URL=https://api.example.com
-GRAPHQL_URL=https://graphql.example.com/v1/graphql
-WEBSOCKET_URL=wss://ws.example.com
-GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+# API Configurations
+API_BASE_URL=https://backend.pujo24.com
+GRAPHQL_URL=https://backend.pujo24.com/graphql
+WEBSOCKET_URL=wss://backend.pujo24.com/ws/groups
+
+# Third-Party Keys
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
 ```
 
 ## Project Structure
@@ -254,118 +257,136 @@ PUJA24/
 ```
 
 ## Architecture Deep Dive
+
 ### Layered Architecture
-The app follows a feature-first, layered architecture. Each feature is self-contained with its own `data`, `domain`, and `presentation` layers.
-- **Data Layer**: Repositories, models, and API services (Dio/GraphQL).
-- **Domain Layer**: Business logic, entity models, and use cases.
-- **Presentation Layer**: UI widgets, screens, and Riverpod providers.
+The application is structured using a strict **Feature-First Layered Architecture**. Each domain of the application (e.g., Auth, Groups, Pandals) is encapsulated within its own folder inside `lib/features/`. Within each feature, we enforce a strict separation of concerns:
+- **Data Layer**: Contains API services, WebSockets, and Repositories. It is responsible for fetching raw data and parsing it into domain models.
+- **Domain Layer**: Contains the core business logic, strongly typed Data Models, and entities. This layer is independent of any UI framework.
+- **Presentation Layer**: Contains the UI widgets, Screens, and Riverpod Notifiers/Providers. The presentation layer exclusively communicates with the Data layer via Providers.
 
 ### Data Flow Diagram
+The data flows unidirectionally, adhering to reactive programming principles:
 ```text
-UI (Widgets) <---> Riverpod Providers <---> Repositories <---> API/Services (Dio/GraphQL/Firebase)
+UI Event (User taps button)
+      │
+      ▼
+Riverpod Notifier (Processes business logic)
+      │
+      ▼
+Repository (Requests data)
+      │
+      ▼
+Service (Dio / GraphQL / WebSocket)
+      │
+      ▼
+Backend API (Returns JSON)
+      │
+      ▼
+Model (Parsed via fromJson)
+      │
+      ▼
+Riverpod State Updates (State = AsyncData(Model))
+      │
+      ▼
+UI Re-builds (Widget consumes state via ref.watch)
 ```
 
 ## State Management (Riverpod)
+
 ### Provider ↔ Notifier Pattern
-We extensively use `Notifier` and `AsyncNotifier` to handle complex states, while exposing them via `NotifierProvider`. This ensures strong typing and predictable state transitions.
+We rely on the modern Riverpod `Notifier` and `AsyncNotifier` patterns to manage business logic. This ensures state is isolated and strongly typed.
+- **AsyncNotifierProvider**: Used for fetching and mutating data asynchronously (e.g., fetching a list of pandals).
+- **NotifierProvider**: Used for synchronous local state management (e.g., toggling a UI filter).
+Instead of passing data down the widget tree via constructors, widgets use `ConsumerWidget` or `ConsumerStatefulWidget` to listen (`ref.watch`) or read (`ref.read`) state directly from the globally accessible providers.
 
 ## Models Layer
-Models are mapped from JSON responses using factory constructors (`fromJson`, `toJson`). 
-- **Domain Models**: E.g., `PujaDetailModel`, `RestaurantModel`, `PassPackageModel`.
+Every entity received from the backend is strongly typed. We do not pass raw Maps (`Map<String, dynamic>`) to the UI.
+Models are defined in the `domain/models/` directory of each feature. They use factory constructors like `fromJson` to parse data safely.
+- **Examples**: `PujaDetailModel`, `RestaurantModel`, `PassPackageModel`, `UserVoucherModel`.
 
 ## Services Layer
+
 ### API Service (GraphQL & Dio)
-`api_config.dart` configures base URL and headers. `graphql_service.dart` handles GraphQL mutations and queries, while standard REST requests use Dio.
+- **REST via Dio**: Used for transactional operations like Authentication (`/auth/login`), Group management, and Passes purchases. Configured in `core/network/api_config.dart`.
+- **GraphQL**: The app relies heavily on a GraphQL endpoint for complex, nested data fetching, reducing over-fetching on the mobile client. Handled by `graphql_service.dart`.
+
 ### Auth Service
-Integrates Firebase Authentication and Google Sign-In, bridging session tokens to our backend.
+Manages authentication bridges between Firebase and our custom backend. Firebase is used to seamlessly handle Phone OTP and Google Sign-in. The resulting Firebase ID token is then verified against the backend to receive an application-specific JWT session token.
+
 ### WebSocket Service
-`group_websocket_service.dart` enables real-time map tracking of group members.
+The `group_websocket_service.dart` establishes a persistent connection to the backend. It pushes local GPS coordinates and receives real-time coordinate updates from other group members. This service is decoupled from the UI and updates a Riverpod state stream directly.
+
 ### Location & Map Services
-`places_api_service.dart` handles geocoding and Places API lookups, used for pandal mapping and food discovery.
+The `places_api_service.dart` orchestrates calls to the Google Places API. It handles geocoding user inputs, retrieving place details, and fetching nearby transit stations (Metro) and parking lots.
 
 ## Routing (GoRouter)
-Routing is strictly declarative using `GoRouter`. Routes are defined in `app_router.dart` and paths in `route_names.dart`.
+Routing is strictly declarative using the `go_router` package.
+- The router configuration is centralized in `routes/app_router.dart`.
+- Deep linking is inherently supported.
+- Navigation utilizes `context.go()` or `context.push()` referencing hardcoded strings defined in `routes/route_names.dart` to prevent typos.
 
 ## Theming System
-Managed in `core/theme/`. Includes `app_colors.dart` for branding and `app_theme.dart` for global light/dark configurations.
+The UI is fully customized to reflect the vibrant spirit of Durga Puja.
+- **Tokens**: `app_colors.dart` and `app_typography.dart` define a strict design system.
+- **Theme**: `app_theme.dart` constructs the global `ThemeData`, supporting both Light and Dark modes seamlessly.
 
 ## Feature Modules
+
 ### Authentication Flow
-Phone/OTP verification, Google Sign-in, and an onboarding map picker for default locations.
+A frictionless onboarding experience. Users can authenticate using Phone Number (OTP via Firebase) or Google Sign-In. Post-login, users undergo a profile setup flow, including a map picker screen to set their default base location.
+
 ### Pandal Discovery & Planner
-Explore pandals on a live map, read details, check live crowd status, and add them to a daily itinerary.
+The core utility of the app. It lists hundreds of pandals. Users can view detailed information (theme, facilities, history), check the live crowd status, and tap to add the pandal to a personalized daily itinerary (Planner).
+
 ### Group Planning
-Create or join a group. Track friends on a real-time live map to avoid getting lost in the crowd.
+Solves the problem of losing friends in massive crowds. Users can create a private group and share an invite code. Once inside the group, members can view a shared itinerary and track each other's live locations on a shared map via WebSockets.
+
 ### Food & Transport
-Discover nearby restaurants and food stalls. Get metro route guidance and real-time parking spot mapping.
+Integrates seamlessly with the Places API to discover top-rated food stalls and restaurants near specific pandals. The transport module provides real-time metro guide maps and locates nearby authorized parking zones.
+
 ### Puja Passes
-Buy VIP passes via Razorpay integration, manage them in `my_passes_screen.dart`, and view QR codes for entry.
+An integrated e-commerce flow allowing users to purchase VIP express entry passes. Razorpay handles the transaction. Purchased passes are stored securely and rendered as QR codes for offline scanning at entry gates.
 
 ## Backend API Contract
-The application communicates with a robust backend using both REST and GraphQL endpoints. Here is a comprehensive list of the APIs defined in the client:
-
-### Authentication (`/auth`)
-- **`POST /auth/login`**: Initiate phone number login.
-- **`POST /auth/verify-otp`**: Verify OTP and receive session token.
-- **`POST /auth/logout`**: Terminate the current user session.
-
-### GraphQL Engine (`/graphql`)
-- **`POST /graphql`**: The primary endpoint for rich data queries. Handled by `graphql_service.dart`.
-  - Used to fetch Pandal listings, Pandal details, Food stalls, and global feed data.
-
-### Groups & Planning (`/groups`)
-- **`GET /groups`**: Fetch all groups the current user belongs to.
-- **`POST /groups`**: Create a new group.
-- **`GET /groups/{id}`**: Fetch details of a specific group.
-- **`POST /groups/join`**: Join a group via an invite code.
-- **`POST /groups/{id}/leave`**: Leave a group.
-- **`GET /groups/invitation/{code}`**: Retrieve group metadata before joining via an invite link.
-- **`GET /groups/{groupId}/itinerary`**: Fetch the shared group itinerary.
-- **`POST /groups/{groupId}/itinerary`**: Add a pandal or plan to the group itinerary.
-
-### Puja Passes (`/passes`)
-- **`GET /passes/packages`**: Retrieve available VIP Puja pass packages.
-- **`GET /passes/packages/{id}`**: Retrieve details of a specific pass package.
-- **`POST /passes/purchase`**: Initiate a pass purchase (creates a Razorpay order).
-- **`POST /passes/verify`**: Verify the payment signature and activate the pass.
-- **`GET /passes/user`**: Fetch all active and past passes owned by the user.
-
-### Rewards & Gamification (`/rewards`)
-- **`GET /rewards/balance`**: Get the user's current reward point balance.
-- **`POST /rewards/scan`**: Scan a QR code at a pandal to earn points.
-- **`POST /rewards/redeem`**: Redeem points for vouchers or perks.
-
-### Third-Party / External APIs
-- **Google Places API**: `GET https://maps.googleapis.com/maps/api/place/nearbysearch/json`
-  - Used for discovering nearby pandals, restaurants, metro stations, and parking zones.
-- **Google Directions API**: `GET https://maps.googleapis.com/maps/api/directions/json`
-  - Used for routing and transit calculations.
+The client seamlessly interacts with a robust suite of APIs:
+- **Authentication**: `POST /auth/login`, `POST /auth/verify-otp`, `POST /auth/logout`
+- **GraphQL Engine**: `POST /graphql` (Pandal listings, Food data)
+- **Groups**: `GET /groups`, `POST /groups`, `POST /groups/join`, `POST /groups/{groupId}/itinerary`
+- **Passes**: `GET /passes/packages`, `POST /passes/purchase`, `POST /passes/verify`
+- **Rewards**: `GET /rewards/balance`, `POST /rewards/scan`, `POST /rewards/redeem`
+- **External**: Google Places API (`/nearbysearch`), Google Directions API.
 
 ## Real-Time Communication
-Powered by WebSockets for group coordination and live status updates of pandal crowds.
+WebSockets are the backbone of the live tracking feature. When a user enters the `group_live_map_screen.dart`, a WebSocket connection is initialized. A background isolate safely polls GPS coordinates and streams them through the socket, updating the state of markers on the Google Map in real-time.
 
 ## Firebase Integration
-Used for Authentication (`firebase_auth`), push notifications (`flutter_local_notifications`), and potentially analytics/crashlytics.
+- **Firebase Authentication**: Used as the primary identity provider.
+- **Firebase Cloud Messaging (FCM)**: Used in tandem with `flutter_local_notifications` to deliver push notifications (e.g., group invites, pass confirmations).
 
 ## Key Design Decisions
-- **Feature-first Structure**: Easy scaling and isolated domains.
-- **Riverpod over Provider**: For safer, compile-time checked dependency injection.
-- **GraphQL + REST**: Combining legacy REST APIs with efficient GraphQL queries.
+- **Modularity via Feature-First**: By structuring by feature rather than layer (e.g., putting all models in one folder), the codebase scales infinitely without becoming a tangled mess.
+- **Riverpod over Provider**: Eliminated `BuildContext` dependencies in state logic, making the app much more testable and robust.
+- **GraphQL for Discovery**: Instead of maintaining 50 REST endpoints for different filter combinations of Pandals and Food, GraphQL provides dynamic querying capabilities.
 
 ## Common Gotchas
-- **WebSockets connection drops**: Always handle reconnection logic in the `group_websocket_service.dart`.
-- **Maps API Key limits**: Ensure your local `.env` has a billing-enabled Maps key for development.
+- **WebSocket Drops**: Network changes (e.g., switching from WiFi to Cellular) will drop the socket. Ensure the retry logic in `group_websocket_service.dart` is resilient.
+- **Google Maps API Quotas**: The Places API is expensive. Aggressive caching strategies are implemented to prevent duplicate requests when moving the map slightly. Ensure your `.env` key is restricted to avoid abuse.
 
 ## Adding a New Feature
-1. Create a folder in `lib/features/`.
-2. Add `data`, `domain`, and `presentation` sub-folders.
-3. Define models, fetch data via repositories, and manage state in `presentation/providers`.
-4. Register the new route in `routes/app_router.dart`.
+1. Create a new directory under `lib/features/my_new_feature/`.
+2. Scaffold `data/`, `domain/`, and `presentation/` sub-directories.
+3. Define your data models in `domain/models/`.
+4. Create an API Service and Repository in `data/`.
+5. Create a Notifier in `presentation/providers/` that consumes the Repository.
+6. Build your UI screens in `presentation/` and watch the Notifier.
+7. Expose the new screen as a route in `routes/app_router.dart`.
 
 ## Contributing
-1. Fork the repo and create a feature branch.
-2. Ensure `flutter analyze` passes.
-3. Open a Pull Request.
+We welcome contributions!
+1. Fork the repository and create your feature branch (`git checkout -b feature/AmazingFeature`).
+2. Adhere strictly to the `flutter_lints` rules defined in `analysis_options.yaml`.
+3. Commit your changes with descriptive messages.
+4. Open a Pull Request for review.
 
 ## License
 This project is proprietary and confidential. Unauthorized copying of this file, via any medium, is strictly prohibited.
